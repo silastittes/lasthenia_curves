@@ -1,0 +1,1002 @@
+---
+title: "tolerance curves plotting"
+author: "Silas Tittes"
+date: '`r format(Sys.time(), "%d %B, %Y")`'
+output:
+  html_document: default
+  pdf_document:
+    fig_caption: yes
+    latex_engine: xelatex
+---
+
+```{r setup}
+#knitr::opts_knit$set(
+#  root.dir = '~/Documents/Projects/tolerance-curve2/'
+#  )
+knitr::opts_knit$set(root.dir = normalizePath("..")) 
+```
+
+sim_params3
+## Data prep
+```{r}
+source("load_data.R")
+#draws <- read_csv("bayes/stan_par1_df.csv") #draws for penalized zero model
+#draw_fits <- read_csv("bayes/tidy_curves.csv")
+
+
+```
+
+
+```{r}
+
+
+# spp <- unique(emery$species) %>% sample(size = 1)
+# d_em <- filter(emery, species == spp)
+# c_draws <- sample(x = 1:ndraws, 100)
+# c_draws <- 1
+# 
+# 
+# test <- predictions(spp = spp, par_df = draws, x_draws = c_draws, p = c(0.95, 0.5))
+# plot(test$l95$x, test$l95$upper, type = "n", ylim = c(0, max(test$l95$upper)))
+# lines(test$l95$x, test$l95$upper)
+# lines(test$l95$x, test$l95$lower)
+# 
+# polygon(c(test$l50$x,rev(test$l50$x)), 
+#         c(test$l50$upper, rev(test$l50$lower)), 
+#         col = "dodgerblue", border = F)
+# lines(test$l50$x, test$l50$mu, col = "black", lwd = 3)
+# points(d_em$treat, d_em$Inflor_biomass)
+
+```
+
+
+## Trace plots and stan summary
+```{r}
+#note parameters as discussed in paper are:
+#a = alpha
+#b = beta
+#c = zeta
+#d = delta
+#e1 = epsilon
+#traceplot for parameter for each species
+
+
+stan_sum <- summary(
+  stanDat, 
+  par = c("shape1", "shape2", "stretch", "x_min", "x_max", "nu")
+)$summary
+
+options(xtable.sanitize.colnames.function=identity,
+        xtable.sanitize.rownames.function=identity)
+print.xtable(
+  xtable(round(stan_sum, 2)), comment = F, file = "derived_files/stan_table.tex",
+  tabular.environment='longtable', include.colnames = TRUE,
+  floating=FALSE, add.to.row = list(pos = list(0), command = "\\hline \\endhead "))
+
+pdf("figures/trace_a.pdf")
+rstan::traceplot(stanDat, par=c("shape1"))
+dev.off()
+
+pdf("figures/trace_b.pdf")
+rstan::traceplot(stanDat, par=c("shape2"))
+dev.off()
+
+pdf("figures/trace_c.pdf")
+rstan::traceplot(stanDat, par=c("stretch"))
+dev.off()
+
+pdf("figures/trace_d.pdf")
+rstan::traceplot(stanDat, par=c("x_min"))
+dev.off()
+
+pdf("figures/trace_e.pdf")
+rstan::traceplot(stanDat, par=c("x_max"))
+dev.off()
+
+# pdf("figures/trace_beta_0.pdf")
+# rstan::traceplot(stanDat, par=c("beta_0"))
+# dev.off()
+# 
+# pdf("figures/trace_beta_1.pdf")
+# rstan::traceplot(stanDat, par=c("beta_1"))
+# dev.off()
+
+pdf("figures/trace_nu.pdf")
+rstan::traceplot(stanDat, par=c("nu"))
+dev.off()
+
+```
+
+
+## Raw parameter prob differences
+```{r}
+
+
+gen_comp <- function(var, cut = 0.95){
+  
+  high <- cut
+  low <- 1 - cut
+  
+  var_df <- draws %>%
+    select(species, draw, one_of(var)) %>%
+    rename_(var = var) %>%
+    spread(key = species, value = var) %>%
+    select(-draw)
+  
+  map_df(var_df, ~{
+    map_dbl(var_df, function(x){
+      comp_p <- mean(.x > x)
+      ifelse(comp_p > high | comp_p < low, round(mean(.x - x), 2), NA)
+    })
+  }) %>% as.matrix
+}
+
+quant_diff <- function(var, cut = 0.95){
+  comp_mat <- gen_comp(var)
+  lower_mat <- comp_mat[lower.tri(comp_mat)]
+  round(mean(!is.na(lower_mat)) * 100, 0)
+  
+}
+
+
+xmax_comps <- gen_comp("x_min")
+rownames(xmax_comps ) <- colnames(xmax_comps )
+
+sum(xmax_comps["glaberrima",] < 0, na.rm = T)
+xmax_comps[,"glaberrima"]
+
+
+comp_matrices <- function(var, cut = 0.95){
+  
+  map_comp_p <- gen_comp(var)
+  perc_diff <- quant_diff(var)
+  
+  map_comp_p[upper.tri(map_comp_p, diag = T)] <- NA
+  map_comp_p <- cbind(colnames(map_comp_p), map_comp_p)
+  colnames(map_comp_p) <- paste0(substr(colnames(map_comp_p), 1, 2), ".")
+  colnames(map_comp_p)[1] <- tab_strings[which(post_params == var)]
+  
+  write.csv(map_comp_p, 
+            file = paste0("derived_files/parameter_comp_matrices/",
+                          var,
+                          "_matrix.csv")
+  )
+  
+  cap <- str_glue("Pairwise comparisons among taxa for parameter, {var} ({perc_diff}\\% differ)") %>%
+    gsub(pattern = "_", replacement = "\\\\_") %>%
+    as.character()
+  
+  options(xtable.sanitize.colnames.function=identity,
+          xtable.sanitize.rownames.function=identity)
+  
+  print.xtable(xtable(map_comp_p, caption = cap), 
+               file = pair_file, 
+               caption.placement = "top",
+               append = TRUE, 
+               include.rownames=FALSE)
+  
+}
+
+
+
+post_params <- c("x_min", "maxima", "x_max", "stretch", "breadth", "area")
+# tab_strings <- c("$\\delta$", "optima", "$\\epsilon$", "$\\zeta$", "$\\epsilon - \\delta$", "area")
+tab_strings <- gsub(pattern = "_", replacement = "\\\\_", x = post_params) %>%
+  gsub(pattern = "maxima", replacement = "optimum", x = .)
+names(post_params) <- tab_strings 
+pair_file <- "derived_files/parameter_comp_matrices/post_all_comparisons.tex"
+file.create(pair_file)
+post_params %>% map( ~ comp_matrices(var = .x)) %>% invisible
+
+```
+
+
+
+## concept plot of curves
+```{r}
+
+plot_concept <- function(){
+  #conceptual plot over top of densities
+  off <- 0.1
+  a <- 4
+  b <- 2.7
+  c <- 5.5
+  d <- 0
+  e <- 1
+  xseq_0 <- seq(0,1, length.out = 500)
+  xseq_a <- xseq_0 * (e - d) + d
+  fa = performance_mu(xseq_0, a, b, c, d, e)
+  opt_loc <- (((a - 1)/(a*b - 1))^(1/a) * (e - d) + d)
+  low_loc <- d
+  high_loc <- e
+  bredth <- e - d
+  
+  arr_len <- 0.05
+  par_cex <- 1
+  
+  par(mar = c(3, 2, 1, 1)*1.1)
+  plot(xseq_a, fa, type = "l", lwd = 2, axes = F, xlab = "", ylab = "",
+       ylim = c(0, max(fa)*1.25) )
+  axis(1, labels = F); axis(2, labels = F)
+  mtext(text = "Fitness", side = 2, line = 1.2)
+  mtext(text = "Environment", side = 1, line = 1.2)
+  
+  #polygon for area
+  polygon(x = c(rev(xseq_a), xseq_a), y = c(rep(0, length(fa)), fa), 
+          density = 100, col = alpha("black", 0.05), border = T, lwd = 2)
+  text(0.7, mean(fa), "area*")
+  
+  text(x = opt_loc, y = max(fa)*(1-off), "optima*")
+  points(x = opt_loc, y = max(fa), pch = 21, bg = "white", cex = 1.2)
+  
+  
+  #text(x = low_loc, y = max(fa)*off, expression(delta), cex = par_cex)
+  text(x = low_loc + 0.05, y = max(fa)*off, "x_min", cex = par_cex)
+  points(x = low_loc, y = 0, pch = 21, bg = "white", cex = 1.2)
+  
+  #text(x = high_loc, y = max(fa)*off, expression(epsilon), cex = par_cex)
+  text(x = high_loc - 0.1, y = max(fa)*off, "x_max", cex = par_cex)
+  points(x = high_loc, y = 0, pch = 21, bg = "white", cex = 1.2)
+  
+  #segment for zeta
+  #calc kums with zeta = 1
+  z1 <- max(performance_mu(xseq_0, a, b, 1, 0 ,1))
+  za <- max(fa)
+  zeta_loc <- low_loc + 0.25
+  arrows(x0 = zeta_loc, y0 = za, x1 = zeta_loc, y1 = z1, 
+         code = 3, angle = 90, length = arr_len, lwd = 2, col = "grey50")
+  #text(x = zeta_loc + 0.02, y = (z1+za)/2, expression(zeta), cex = par_cex)
+  text(x = zeta_loc + 0.05, y = (z1+za)/2, "stretch", cex = par_cex)
+  
+  
+  yy <- 4
+  arrows(x0 = 0, y0 = max(fa)+1, x1 = high_loc, y1 = max(fa)+1, 
+         code = 3, angle = 90, length = arr_len, lwd = 2, col = "grey50")
+  
+  #text(x = median(xseq_a), y = max(fa)+2.5, expression(epsilon - delta), cex = par_cex)
+  text(x = median(xseq_a), y = max(fa)+2.5, "breadth*", cex = par_cex)
+  
+}
+
+plot_concept()
+```
+
+## DAG
+
+```{r}
+plt_par <- function(input, coord, plot = F, rng = NULL, ...){
+  if(plot){
+    par(mar = c(0,0,1,0))
+    plot(NA, NA, 
+         xlim = c(rng[1], rng[2]), 
+         ylim = c(rng[3], rng[4]), 
+         axes = F, 
+         xlab = "", 
+         ylab = "")
+  }
+  input <- substitute(input)
+  text(coord[1],coord[2], eval(expression(input)), ...)  
+}
+
+
+plot_dag <- function(){
+  
+  
+  #l1_x <- c(0.8, 2, 3.75)
+  l1_x <- c(0.8, 2)
+  l2_x <- l1_x
+  #l3_x <- c(1.2, 1.6, 2, 2.4, 2.8, 3.5, 4)
+  l3_x <- c(1.2, 1.6, 2, 2.4, 2.8)
+  l4_x <- c(0.8, l3_x)
+  
+  
+  l1 <- 4
+  l2 <- 3
+  l3 <- 2
+  l4 <- 1
+  buff <- 0.15
+  arl <- 0.05
+  tpos <- 4
+  xtpos <- 0.4
+  rng <- c(0.5, max(l3_x) + 1.25, l4 - 0.1, l1 + 0.1)
+  
+  plt_par(x[ij], 
+          coord = c(l1_x[1], l1), 
+          plot = T, 
+          rng = rng)
+  
+  #text(2, 4.5, "( Reproductive biomass )")
+  #abline(v = 3.15, lty = 3, col = "grey")
+  #text(3.75, 4.5, "( Mortality )")
+  
+  #level 1  
+  plt_par(y[ij], coord = c(l1_x[2], l1))
+  plt_par(z[ij], coord = c(l1_x[3], l1))
+  
+  #x to y
+  arrows(l1_x[1] + buff, l1, l1_x[2] - buff, l1, length = arl, lty = 2)
+  #arrows(l1_x[3] - buff, l1, l1_x[2] + buff, l1, length = arl)
+  
+  
+  
+  #level 2
+  plt_par(mu[ij], coord = c(l2_x[2], l2), col = "blue")
+  plt_par(p[ij], coord = c(l2_x[3], l2), col = "blue")
+  
+  #mu to y
+  arrows(l2_x[2], l2+buff, l2_x[2], l1-buff, length = arl)
+  
+  #mu to p
+  arrows(l2_x[2]+buff, l2, l2_x[3]-buff, l2, length = arl)
+  
+  #p to z
+  arrows(l2_x[3], l2+buff, l2_x[3], l1-buff, length = arl)
+  
+  #p to y
+  arrows(l2_x[3]-buff, l2+buff, l2_x[2]+buff, l1-buff, length = arl)
+  
+  
+  #level 3
+  plt_par(nu[j], coord = c(l4_x[1], l3))
+  
+  plt_par(shape1[j], coord = c(l3_x[1], l3))
+  plt_par(shape2[j], coord = c(l3_x[2], l3))
+  plt_par(stretch[j], coord = c(l3_x[3], l3))
+  plt_par(x_min[j], coord = c(l3_x[4], l3))
+  plt_par(x_max[j], coord = c(l3_x[5], l3))
+  
+  
+  #nu to y
+  arrows(l4_x[1], l3+buff, l2_x[2]-buff, l1-buff, length = arl)
+  
+  #a,b,c,d,e to mu
+  for(i in 1:5){
+    arrows(l3_x[i], l3+buff, l2_x[2], l2-2*buff, length = 0)
+  }
+  
+  #connector to mu
+  arrows(l2_x[2], l2-2*buff, l2_x[2], l2-buff, length = arl)
+  
+  
+  plt_par(beta[0[j]], coord = c(l3_x[6], l3), cex = 1)
+  plt_par(beta[1[j]], coord = c(l3_x[7], l3), cex = 1)
+  
+  #beta_0 to p
+  arrows(l3_x[6], l3+buff, l2_x[3], l2-2*buff, length = 0)
+  
+  #beta_1 to p
+  arrows(l3_x[7], l3+buff, l2_x[3], l2-2*buff, length = 0)
+  
+  #connector to p
+  arrows(l2_x[3], l2-2*buff, l2_x[3], l2-buff, length = arl)
+  
+  #level4
+  plt_par(gamma[nu], coord = c(l4_x[1], l4))
+  plt_par(gamma[shape1], coord = c(l4_x[2], l4))
+  plt_par(gamma[shape2], coord = c(l4_x[3], l4))
+  plt_par(gamma[stretch], coord = c(l4_x[4], l4))
+  plt_par(gamma[x_min], coord = c(l4_x[5], l4))
+  plt_par(gamma[x_max], coord = c(l4_x[6], l4))
+  
+  plt_par(mu[beta[0]], coord = c(l4_x[7], l4), cex = 1)
+  plt_par(mu[beta[1]], coord = c(l4_x[8], l4), cex = 1)
+  
+  
+  #nu to nu
+  arrows(l4_x[1], l4 + buff, l4_x[1], l3 - buff, length = arl)
+  
+  #abcdeb0b1 to abcdeb0b1
+  for(i in 2:8){
+    arrows(l4_x[i], l4 + buff, l3_x[i-1], l3 - buff, length = arl)  
+  }
+  
+  #info text
+  abline(v = max(l3_x) + xtpos, col = "grey")
+  text(max(l3_x) + xtpos, l1, "Data", pos = tpos)
+  text(max(l3_x) + xtpos, l2, "Computed", pos = tpos)
+  text(max(l3_x) + xtpos, l3, "Species level", pos = tpos)
+  text(max(l3_x) + xtpos, l4, "Group level", pos = tpos)
+  
+  
+}
+
+plot_dag()
+```
+
+
+## New concept fig
+```{r}
+cairo_pdf(filename = "figures/fig2_new.pdf")
+par(mfrow = c(2,1))
+plot_dag()
+plot_concept()
+dev.off()
+```
+
+
+## Reviewer suggested alternative to figure 3 (error bars)
+```{r}
+source("derived_files/state_reg.R")
+grad_df <- gen_gradient_df(tolerance_df = draws)
+
+
+q_low <- function(x) quantile(x, probs = 0.225, na.rm = T)
+q_hi <- function(x) quantile(x, probs = 0.975, na.rm = T)
+
+
+err_df <- grad_df %>%
+  select(species, shape1, shape2, stretch, x_min, x_max, maxima, Mean, SE) %>%
+  group_by(species) %>%
+  summarise_all(.funs = list(mean = mean, `5th` = q_low, `95th` = q_hi)) %>%
+  ungroup() %>%
+  mutate(mpse = Mean_mean + SE_mean,
+         mmse = Mean_mean - SE_mean) %>%
+  left_join(., select(grad_df, species, aqua_terr2terr) %>% unique(), by = "species") %>%
+  mutate(species = factor(species, levels = lasth$tip.label[lasth$edge[,2][lasth$edge[,2] <= length(lasth$tip.label)]]))
+
+
+plot_err <- function(df = err_df, var, var_lo, var_hi, param, first = F, standard = T){
+  
+  if(standard){
+    meen <- paste0(enquo(var), "_mean")
+    lo <- paste0(enquo(var), "_5th")
+    hi <- paste0(enquo(var), "_95th")
+    par_plot_df <- df %>%
+      select(species, !! meen[2], !! lo[2], !! hi[2], aqua_terr2terr) %>%
+      rename(var_mean = !! meen[2],
+             var_lo = !! lo[2],
+             var_hi = !! hi[2])
+  } else {
+    meen <- enquo(var)
+    lo <- enquo(var_lo)
+    hi <- enquo(var_hi)
+    par_plot_df <- df %>%
+      select(species, !! meen, !! lo, !! hi, aqua_terr2terr) %>%
+      rename(var_mean = !! meen,
+             var_lo = !! lo,
+             var_hi = !! hi)
+  }
+  
+  par_plot <- par_plot_df %>% 
+    ggplot(aes(var_mean, species, colour = aqua_terr2terr)) +
+    geom_errorbarh(height = 0.25, colour = "black", aes(xmin=var_lo, xmax=var_hi), inherit.aes = T) +
+    geom_point(alpha = 0.9) +
+    xlab(param) +
+    scale_x_continuous(breaks = scales::pretty_breaks(n = 4)) +
+    scale_colour_manual(values=topo.colors(n = 12, alpha = 1)[c(11,4)]) +
+    theme_minimal() +
+    theme(legend.position = "none",
+          panel.grid.major.y = element_blank(),
+          panel.grid.minor.y = element_blank()) 
+  
+  if(first){
+    par_plot
+  } else{
+    par_plot  + 
+      theme(axis.title.y=element_blank(),
+            axis.text.y=element_blank(),
+            axis.ticks.y=element_blank(),
+            axis.line.y=element_blank())
+    
+    
+  }
+  
+}
+
+d <- plot_err(var = x_min, param = "x_min", first = T) +
+  theme(axis.text.y=element_text(face="italic"))
+maxi <- plot_err(var = maxima, param = "optimum") 
+e <- plot_err(var = x_max, param = "x_max") 
+c <- plot_err(var = stretch, param = "stretch")
+
+
+miss <- err_df %>%
+  filter(is.na(Mean_mean)) %>%
+  mutate(mmse = 0.08,
+         mpse = max(err_df$mpse, na.rm = T))
+  
+se <- plot_err(var = Mean_mean, var_lo = mmse, var_hi = mpse, param = "depth (cm)", standard = F) +
+  geom_segment(data = miss, 
+               aes(mmse, species, xend = mpse, yend = species),
+               inherit.aes = F,
+               colour = "grey30",
+               arrow = arrow(length = unit(0.12, "cm"))) +
+  theme(panel.border = element_rect(colour = alpha("black", 0.5), fill=NA, size=0.5))
+  
+
+cairo_pdf(filename = "figures/fig3.pdf", width = 9, height = 5)
+d + maxi + e + c + se + plot_layout(nrow = 1)
+dev.off()
+
+```
+
+
+
+
+## Parameter density plot with phylogeny version 2
+```{r, eval=FALSE}
+
+source("derived_files/state_reg.R")
+#set habitat colors
+colz <- topo.colors(n = 12, alpha = 0.7)[c(11,4)]
+colz2 <- topo.colors(n = 12, alpha = 1)[c(11,4)]
+names(colz) <- c("terrestrial","vernal")
+colz_par <- colz[match(state_reg_aqua_terr2terr, names(colz))]
+names(colz_par) <- names(state_reg_aqua_terr2terr)
+
+
+spp_list <- rev(lasth$tip.label[lasth$edge[,2][lasth$edge[,2] <= length(lasth$tip.label)]])
+
+#pdf("figures/fig3.pdf")
+#png(filename = "figures/fig4_curves.png")
+
+cnc <- 1
+ml <- rbind(c(0, 0, 0, 0, 0, 0),
+            c(0, 1, 1, 1, 0, 0),
+            c(0, 1, 1, 1, 0, 0),
+            c(0, 1, 1, 1, 0, 0),
+            cbind(rep(2,length(spp_list)),
+                  matrix(seq_along(spp_list)+1+cnc), 
+                  matrix(seq_along(spp_list)+length(spp_list)+1+cnc),
+                  matrix(seq_along(spp_list)+2*length(spp_list)+1+cnc),
+                  matrix(seq_along(spp_list)+3*length(spp_list)+1+cnc),
+                  matrix(seq_along(spp_list)+4*length(spp_list)+1+cnc)),
+            rep(0, 6), rep(0, 6))
+
+layout(ml)
+
+par(mar = c(2,2,0,0))
+plot_concept()
+par(mar = c(0,0,0,0))
+
+plot.phylo(lasth, edge.width = 2, show.tip.label = F)
+
+post_params <- c("x_min", "maxima", "x_max", "stretch")
+greek_params <- c(expression(delta), expression(optima), expression(epsilon), expression(zeta))
+
+
+seq_along(post_params) %>% walk(function(x){
+  var <- post_params[x]
+  den_var <- draws %>% 
+    group_by(species) %>%
+    do(den = density(.[[var]]))
+  
+  den_range <- den_var$den %>% map_df(~{
+    xl = quantile(.x$x, 0) 
+    xh = quantile(.x$x, 1)
+    # xl = quantile(.x$x, 0.025)
+    # xh = quantile(.x$x, 0.975)
+    yl = 0
+    yh = quantile(.x$y, 1)
+    cbind(xl, xh, yl, yh) %>% as_data_frame
+  }) %>% summarise_all(funs(min, max))
+  
+  
+  
+  names(den_var$den) <- den_var$species
+  
+  seq_along(spp_list) %>% map(~{
+    spp_den <- den_var$den[[spp_list[.x]]] 
+    plot(spp_den$x, spp_den$y,
+         xlim = c(den_range$xl_min, den_range$xh_max),
+         ylim = c(0, den_range$yh_max),
+         axes = F, type = "n")
+    polygon(spp_den$x, spp_den$y, col = colz_par[spp_list[.x]], border  = T)
+    
+    #segments(x0 = , x1 = , y0 = 0, y1 = 0)
+    
+    if(var == "d") legend("left", spp_list[.x], bty = "n", cex = 0.8)
+  })
+  axis(1)
+  mtext(greek_params[x], side = 1, line = 3)
+})
+
+
+select <- dplyr::select
+rename <- dplyr::rename
+gradient <- read.xls("data/Pool depths_FINAL summary_REVISED.xls", 
+                     header = T, skip = 1, stringsAsFactors = F) %>%
+  mutate(taxa = strsplit(X, "_") %>% map_chr(~ .x[length(.x)]),
+         taxa = ifelse(taxa == "deblilis", "debilis", taxa)) %>% 
+  filter(taxa %in% as.character(unique(emery$species)))
+
+
+limz <- gradient %>%
+  rowwise() %>%
+  summarise(high = Mean + SE,
+            low = Mean - SE) %>%
+  summarise(maxy = max(high, na.rm = T)*1.1,
+            miny = min(low, na.rm = T)*1.1)
+
+spp_list %>%
+  walk(~{
+    row_i <- gradient %>% filter(taxa == .x)
+    par(mar = c(0,0,0,2))
+    plot(
+      NA, NA, 
+      ylim =c(-0.1, 0.5),
+      xlim = c(limz$miny, -limz$miny),
+      axes = F, bty = "n")
+    segments(
+      y0 = 0,
+      y1 = 0,
+      x0 = row_i$Mean - row_i$SE, 
+      x1 = row_i$Mean + row_i$SE,
+      lwd = 1
+    )
+    points(row_i$Mean, 0, pch = 19)
+    abline(v = 0, lty = 2)
+    #text(0.3, limz$maxy, row_i$taxa)
+    if(.x == spp_list[length(spp_list)]){
+      axis(1, cex.axis = 0.85, 
+           at = round(seq(limz$miny, -limz$miny, length.out = 4),2),
+           labels = round(seq(limz$miny*100, -limz$miny*100, length.out = 4),0))
+      mtext(side = 1, "depth (cm)", line = 3, cex = 0.85)              
+    }
+  })
+
+#dev.off()
+
+```
+
+
+
+
+
+
+## curve plots
+```{r}
+#set habitat colors
+source("derived_files/state_reg.R")
+colz <- topo.colors(n = 12, alpha = 1)[c(11,4)]
+colz2 <- topo.colors(n = 12, alpha = 1)[c(11,4)]
+names(colz) <- c("terrestrial","vernal")
+colz_par <- colz[match(state_reg_aqua_terr2terr, names(colz))]
+names(colz_par) <- names(state_reg_aqua_terr2terr)
+
+sppMaxVal <- by(data = emery$Inflor_biomass, 
+                INDICES = emery$sppint, FUN = max)
+names(sppMaxVal) <- unique(emery$species)
+
+
+#plot data
+spp_list <- rev(lasth$tip.label[lasth$edge[,2][lasth$edge[,2] <= length(lasth$tip.label)]])
+
+#pdf(paste0(getwd(),"/figures/tree_tolerance.pdf"))
+#png(filename = "figures/fig3_tree_tolerance.png") #alt
+
+
+pdf("figures/fig2.pdf") #alt
+#svg("figures/fig3_tree_tolerance.svg") #alt
+
+c1 <- rep(1, length(spp_list))
+c_2_4 <- rep(0, length(spp_list))
+c3 <- 2:(length(spp_list)+1)
+m_lay <- cbind(c1, c1, c1, c3, c3, c_2_4)
+m_lay <- rbind(rep(0, ncol(m_lay)), m_lay, rep(0, ncol(m_lay)))
+layout(m_lay, 
+       widths = c(0.25, 0.25, 0.25, 0.2, 0.2, 0.05), 
+       heights = c(0.01, rep(1/(nrow(m_lay)-2), (nrow(m_lay)-2)), 0.05) )
+
+par(mar=c(0,0,0,0))
+
+plot.phylo(lasth, show.tip.label = F, edge.width = 4, 
+           no.margin = T)
+tiplabels(pch = 22, cex = 3,
+          bg = colz[state_reg_aqua_terr2terr[lasth$tip.label]])
+
+#format node support for labeling
+node_fmt <- ifelse(lasth$node.label < 1, 
+                   substring(sprintf("%4.2f", lasth$node.label), 2),
+                   lasth$node.label)
+
+nodelabels(node_fmt, frame = "n", 
+           cex = 1, font = 2, pos=4, offset = 1)
+
+
+legend("bottomleft", c("Terrestrial", "Vernal pool"), pch = 22, pt.cex = 1.5,
+       pt.bg = colz, cex = 1.2, bg = "white")
+
+
+set.seed(123)
+n_draws <- sample(1:ndraws, 100)
+
+xrng <- draws %>% 
+  filter(draw %in% n_draws) %>%
+  summarise(mnx = min(x_min),
+            mxx = max(x_max))
+xrng <- c(xrng$mnx, xrng$mxx)
+yrng <- max(emery$Inflor_biomass)*1.25
+
+
+for(spp in spp_list){
+  
+  #spp <- "glaberrima"
+  subEm <- emery %>% filter(species == spp)
+  spp_draws <- draws %>% filter(draw %in% n_draws, species == spp)
+  
+  x_seq = seq(min(spp_draws$x_min), 
+              max(spp_draws$x_max), 
+              length.out = 100)
+  
+  test <- predictions(x = x_seq, spp = spp, par_df = spp_draws, x_draws = n_draws, p = c(0.95, 0.5))
+  
+  
+  mean_opt <- spp_draws %>%
+    summarise(opt = mean(maxima)) %>%
+    pull()
+  mean_opt_df <- test$l95[which.min((test$l95$x - mean_opt)^2),]
+  
+  max_y <- max(max(test$l95$upper), max(subEm$Inflor_biomass))
+  
+  par(mar=c(0,2,0,2))
+  #plot(NA, NA, ylim=c(-0.5, yrng), xlim = xrng, axes = F, xlab = "", ylab = "")
+  plot(NA, NA, ylim=c(0, max_y*1.1), 
+       xlim = xrng, axes = F, xlab = "", ylab = "")
+  box()
+  
+  pos <- seq(max_y*0.2, max_y*0.8, length.out = 3)
+  axis(side = 2, 
+       cex.axis = 0.75, 
+       at = pos, 
+       labels = round(pos, 1),
+       las = 1, 
+       tck = -0.02,
+       mgp=c(0, 0.2, 0)
+  )
+  
+  
+  polygon(c(test$l95$x,rev(test$l95$x)),
+          c(test$l95$upper, rev(test$l95$lower)),
+          col = alpha(colz[state_reg_aqua_terr2terr[spp]], 0.2),
+          border = colz[state_reg_aqua_terr2terr[spp]],
+          lwd = 0.25)
+  
+  polygon(c(test$l50$x,rev(test$l50$x)),
+          c(test$l50$upper, rev(test$l50$lower)),
+          col = colz[state_reg_aqua_terr2terr[spp]], 
+          border = F)
+  
+  
+  lines(test$l50$x, test$l50$mu, lwd = 1, col = "grey40")
+  
+  points( jitter(subEm$treat, factor = 0.2), subEm$Inflor_biomass,
+          pch=19, cex = 0.5, col = alpha("black", 0.5))
+  
+  #points(mean_opt_df$x, mean_opt_df$mu, pch = "|", cex = 0.75, col = alpha("black", 0.5))
+  abline(v = mean_opt, lty = 2, col = alpha("black", 0.5), lwd = 0.75)
+  
+  legend("topleft", spp, bty="n", text.font = 3)
+}
+
+#axis(side = 2, cex.axis = 0.85, las = 1, tck = -0.02, mgp=c(0, 0.2, 0))
+axis(side = 1, cex.axis = 0.85, tck = -0.02, line = 0, mgp=c(0, 0.2, 0))
+mtext(text = "hydrology treatment", side = 1, cex = 0.7, line = 1)
+mtext(text = "reproductive biomass", side = 2, cex = 0.7, line = 1.5, adj = 0)
+
+dev.off()
+
+```
+
+
+## Plotting observed versus predicted
+
+```{r}
+
+d_1 <- sample(1:ndraws, 1)
+resid_df <- 1:nrow(emery) %>% map_df(~{
+  em_row <- emery %>% slice(.x)
+  draws %>% filter(species == em_row$species) %>%
+    filter(draw %in% d_1) %>%
+    group_by(draw) %>%
+    do({
+      nu <- .$nu
+      performance_mu(em_row$treat, .$shape1, .$shape2, .$stretch, .$x_min, .$x_max) %>% 
+        as_tibble() %>%
+        rename(predicted = value) %>% 
+        mutate(species = em_row$species,
+               treat = em_row$treat,
+               Inflor_biomass = em_row$Inflor_biomass,
+               res = em_row$Inflor_biomass - predicted
+        )
+    }) %>%
+    ungroup()
+})
+
+
+cairo_pdf("figures/figB11.pdf")
+plot(resid_df$predicted, resid_df$res,
+     xlab = "fitted values", ylab = "residuals")
+lines(loess.smooth(resid_df$predicted, resid_df$res), lty = 1)
+abline(h = 0, lty = 2, col = "blue")
+dev.off()
+
+# resid_df %>%
+#   ggplot(aes(predicted, res)) +
+#   geom_point() +
+#   geom_smooth(se = F) +
+#   theme_minimal()
+
+# plot(resid_df$predicted, resid_df$res/(resid_df$predicted + 1)^2)
+# lines(loess.smooth(resid_df$predicted, resid_df$res/(resid_df$predicted + 1)^2))
+# abline(h = 0, lty = 2)
+
+
+```
+
+
+## Plotting parameter densities with priors
+```{r, eval = TRUE}
+
+spp_names <- emery %>% select(species, sppint) %>% 
+  unique() %>% 
+  arrange(sppint)
+
+
+par <- c("shape1", "shape2", "stretch", "x_min", "x_max", "nu")
+spp_par <- par
+hier_par <- c("mu_shape1", "mu_shape2", "mu_stretch", "mu_min", "mu_max", "mu_nu")
+param_letters <- c("shape1", "shape2", "stretch", "x_min", "x_max", "ν") %>% 
+  as_tibble
+
+
+plt_params <- function(p, den_rng, pr_mu, pr_sd, trunc, prior = T){
+  datr <- posts[[spp_par[p]]] %>%
+    as.data.frame() %>%
+    set_colnames(spp_names$species) %>%
+    gather(species, val)
+  
+  vis <- datr %>%
+    ggplot() +
+    geom_density(aes(x = val, color = species), lwd = 0.75, alpha = 0.25) +
+    ggtitle(param_letters$value[p]) +
+    theme_minimal() +
+    xlim(den_rng[1], den_rng[2]) +
+    theme(plot.title = element_text(hjust = 0.5))
+  
+  if(prior){
+    vis <- vis + geom_area(stat = "function",
+                           #fun = ifelse(missing(trunc), dnorm, dtruncnorm),
+                           fun = dtruncnorm,
+                           # args = ifelse(missing(trunc),
+                           #               list(mean = pr_mu, sd = pr_sd),
+                           #               list(mean = pr_mu, sd = pr_sd, a = trunc)
+                           # ), 
+                           args = list(mean = pr_mu, sd = pr_sd, a = trunc),
+                           fill = "red",
+                           alpha = 0.5,
+                           colour="black",
+                           xlim = den_rng) +
+      geom_density( data = as_tibble(posts[[hier_par[p]]]), 
+                    mapping = aes(x = value), 
+                    fill = "dodgerblue",
+                    alpha = 0.5)  
+  }
+  
+  vis
+}
+
+cairo_pdf(filename = paste0("figures/B", 3, ".pdf"))
+plt_params(p = 1, den_rng = c(2,6), pr_mu = 0, pr_sd = 1, trunc = 2)
+dev.off()
+
+cairo_pdf(filename = paste0("figures/B", 4, ".pdf"))
+plt_params(p = 2, den_rng = c(2,6), pr_mu = 0, pr_sd = 1, trunc = 2)
+dev.off()
+
+cairo_pdf(filename = paste0("figures/B", 5, ".pdf"))
+plt_params(p = 3, den_rng = c(0,3), pr_mu = 0, pr_sd = 1, trunc = 0)
+dev.off()
+
+cairo_pdf(filename = paste0("figures/B", 6, ".pdf"))
+plt_params(p = 4, den_rng = c(-5,5), pr_mu = min(emery$treat), pr_sd = 1, trunc = -1000)
+dev.off()
+
+cairo_pdf(filename = paste0("figures/B", 7, ".pdf"))
+plt_params(p = 5, den_rng = c(2,7), max(emery$treat), 1, trunc = -1000) 
+dev.off()
+
+cairo_pdf(filename = paste0("figures/B", 8, ".pdf"))
+plt_params(p = 6, den_rng = c(1,25), 0, 1, trunc = -1000, prior = F)
+dev.off()
+
+# cairo_pdf(filename = paste0("figures/B", 9, ".pdf"))
+# plt_params(p = 7, den_rng = c(-3,3), 0, 1) 
+# dev.off()
+# 
+# cairo_pdf(filename = paste0("figures/B", 10, ".pdf"))
+# plt_params(p = 8, den_rng = c(-3,3), 2, 1) #+ theme(legend.position="none")
+# dev.off()
+
+# xseq <- seq(0, 10, length.out = 100)
+# out <- dtruncnorm(x = xseq, a = 2, mean = 0, sd = 1)
+# plot(xseq, out)
+```
+
+
+
+## Correlation among parameters, within and among species
+```{r, eval=FALSE}
+
+theme_set(theme_minimal())
+
+plot_pars <- function(df = draws, par1, par2, text1, text2){
+  
+  par_one <- enquo(par1)
+  par_two <- enquo(par2)
+  
+  draws_sub <- df %>% select(species, !! par_one, !! par_two) %>%
+    rename( par1 = !! par_one,
+            par2 = !! par_two)
+  
+  grid_p <- draws_sub %>%
+    ggplot(aes(par1, par2, colour = species)) +
+    geom_point(alpha = 0.5) +
+    xlab("") +
+    ylab("") +
+    facet_wrap(~species, nrow = 2) +
+    theme(legend.position = "none")
+  
+  all_p <- draws_sub %>%
+    ggplot(aes(par1, par2, colour = species)) +
+    geom_point(alpha = 0.05) +
+    xlab(text1) +
+    ylab(text2)
+  
+  #grid_p #+ all_p + plot_layout(nrow = 2)
+  all_p
+  
+}
+
+
+plot_pars(par1 = shape2, par2 = x_max, text1 = "", text2 = "")
+
+
+library(GGally)
+
+# correl <- draws %>%
+#   filter(draw %in% sample(1:ndraws, 500)) %>%
+#   select(shape1, shape2, x_min, maxima, x_max, stretch, nu, species) %>%
+#   as.data.frame() %>%
+# ggscatmat(columns = 1:7, alpha = 0.05, color = "species") +
+#   theme(legend.position = "blank") 
+
+correl <- draws %>%
+  filter(draw %in% sample(1:ndraws, 500)) %>%
+  select(shape1, shape2, x_min, maxima, x_max, stretch, nu, species) %>%
+  ggpairs(
+    1:7, mapping = aes(color = species), 
+  lower = list(continuous = wrap("points", alpha = 0.05, size = 1, shape = 1)), 
+  #upper = list(continuous = wrap("points", alpha = 0.05, size = 1, shape = 1)),
+  #upper = list(continuous = wrap("cor", size = 1, alignPercent = 1)),
+  upper = "blank"
+)
+
+correl
+
+mean_inflor <- emery %>% 
+  group_by(species) %>%
+  summarise(mean_inflor = mean(Inflor_biomass))
+
+mean_depth <- wide_params %>%
+  group_by(species) %>%
+  summarise(mean_depth = mean(Mean),
+            mean_stretch = mean(stretch_sc)) %>%
+  full_join(., mean_inflor, by = "species")
+
+cor(mean_depth$mean_stretch, mean_depth$mean_inflor)
+
+cairo_pdf("figures/lm_depth.pdf")
+mean_depth %>%
+  ggplot(aes(mean_inflor, mean_depth)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+dev.off()
+
+
+lm(mean_depth ~ mean_inflor, data = mean_depth) %>%
+  summary %>%
+  coef()
+
+```
+

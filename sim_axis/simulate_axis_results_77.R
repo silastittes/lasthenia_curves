@@ -1,0 +1,23 @@
+run_x <-
+structure(list(lm_df = structure(list(term = c("maxima_sc", "stretch_sc", 
+"x_max_sc", "x_min_sc"), coef = c(0.0177602458261061, 0.0585874887360213, 
+-0.0145264192032132, -0.0106846587195757), p_value = c(0.328229918143839, 
+0.00588835955527922, 0.371984164868883, 0.408253341177088), rand_var = c(3.06092744820441, 
+3.06092744820441, 3.06092744820441, 3.06092744820441), mean_rand = c(-1.06980592823611, 
+-1.06980592823611, -1.06980592823611, -1.06980592823611), sim_n = c(77L, 
+77L, 77L, 77L)), .Names = c("term", "coef", "p_value", "rand_var", 
+"mean_rand", "sim_n"), class = c("tbl_df", "tbl", "data.frame"
+), row.names = c(NA, -4L)), lasso_df = structure(list(var = c("maxima", 
+"stretch", "x_max", "x_min"), mean = c(0.450186222647215, 0.695755562127852, 
+-0.180309038968156, 0.189618752764232), prop = c(0.1025, 0.52, 
+0.01, 0.13), rand_var = c(3.06092744820441, 3.06092744820441, 
+3.06092744820441, 3.06092744820441), mean_rand = c(-1.06980592823611, 
+-1.06980592823611, -1.06980592823611, -1.06980592823611), sim_n = c(77L, 
+77L, 77L, 77L)), .Names = c("var", "mean", "prop", "rand_var", 
+"mean_rand", "sim_n"), class = c("tbl_df", "tbl", "data.frame"
+), row.names = c(NA, -4L)), summ_stan_df = structure(list(shape1 = 3.00291361306838, 
+    shape2 = 5.37051910181472, stretch = 0.887148269562641, x_min = 0.441552125167288, 
+    x_max = 1.97727595652387, maxima = 1.23420336671476, rep = 77L), .Names = c("shape1", 
+"shape2", "stretch", "x_min", "x_max", "maxima", "rep"), class = c("tbl_df", 
+"tbl", "data.frame"), row.names = c(NA, -1L))), .Names = c("lm_df", 
+"lasso_df", "summ_stan_df"))
