@@ -1,0 +1,33 @@
+<<<<<<< HEAD
+"","breadth","bu.","ca.","ch.","co.","co.","de.","fe.","fr.","gl.","gl.","gr.","mi.","mi.","pl."
+"1","burkei",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+"2","californica","-1.58",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+"3","chrysantha","-3.33","-1.75",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+"4","conjugens",NA,NA,"2.7",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+"5","coulteri","-3.19",NA,NA,"-2.57",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+"6","debilis","-2.71",NA,NA,"-2.08",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+"7","ferrisiae","-2.96",NA,NA,"-2.34",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+"8","fremontii","-3.36","-1.78",NA,"-2.73",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+"9","glaberrima",NA,"1.73","3.48",NA,"3.34","2.86","3.11","3.51",NA,NA,NA,NA,NA,NA
+"10","glabrata","-1.67",NA,NA,NA,NA,NA,NA,NA,"-1.82",NA,NA,NA,NA,NA
+"11","gracilis",NA,NA,"2.13",NA,"2","1.51","1.77","2.16",NA,NA,NA,NA,NA,NA
+"12","microglossa","-3.07",NA,NA,"-2.44",NA,NA,NA,NA,"-3.22",NA,"-1.87",NA,NA,NA
+"13","minor","-2.19",NA,NA,"-1.56",NA,NA,NA,NA,"-2.34",NA,NA,NA,NA,NA
+"14","platycarpha","-2.44",NA,NA,"-1.81",NA,NA,NA,NA,"-2.59",NA,NA,NA,NA,NA
+=======
+"","$\epsilon - \delta$","bu.","ca.","ch.","co.","co.","de.","fe.","fr.","gl.","gl.","gr.","mi.","mi.","pl."
+"1","burkei",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+"2","californica",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+"3","chrysantha","-2.8","-2.5",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+"4","conjugens",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+"5","coulteri",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+"6","debilis",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+"7","ferrisiae",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+"8","fremontii",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+"9","glaberrima",NA,NA,"4.1","1.9","3","2.4","3","3.1",NA,NA,NA,NA,NA,NA
+"10","glabrata",NA,NA,NA,NA,NA,NA,NA,NA,"-1.8",NA,NA,NA,NA,NA
+"11","gracilis",NA,NA,"2.7",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+"12","microglossa",NA,NA,NA,NA,NA,NA,NA,NA,"-3.1",NA,NA,NA,NA,NA
+"13","minor",NA,NA,NA,NA,NA,NA,NA,NA,"-1.8",NA,NA,NA,NA,NA
+"14","platycarpha",NA,NA,NA,NA,NA,NA,NA,NA,"-2.6",NA,NA,NA,NA,NA
+>>>>>>> 8bcad5c8891359760a8017d70fb8ca697e50d237
