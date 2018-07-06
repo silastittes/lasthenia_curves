@@ -35,3 +35,5 @@ derived_files/curve_K.csv
 .dropbox
 ..bfg-report
 .Rproj.user
+bayes/fitted_points_mod1.csv
+bayes/fitted_points_mod2.csv
