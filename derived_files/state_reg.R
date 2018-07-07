@@ -30,10 +30,5 @@ reg_df <- tibble(
   habit = state_reg, 
   aqua_terr2terr = state_reg_aqua_terr2terr, 
   aqua_terr2vernal = state_reg_aqua_terr2vernal, 
-<<<<<<< HEAD
-  species = names(state_reg)
-=======
-  Species = names(state_reg)
->>>>>>> 8bcad5c8891359760a8017d70fb8ca697e50d237
-) 
+  species = names(state_reg)) 
 

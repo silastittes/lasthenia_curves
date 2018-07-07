@@ -120,7 +120,7 @@ $(document).ready(function () {
 
 <h1 class="title toc-ignore">tolerance curves plotting</h1>
 <h4 class="author"><em>Silas Tittes</em></h4>
-<h4 class="date"><em>02 July, 2018</em></h4>
+<h4 class="date"><em>06 July, 2018</em></h4>
 
 </div>
 
@@ -1176,23 +1176,65 @@ plot_pars &lt;- function(df = draws, par1, par2, text1, text2){
     theme(legend.position = &quot;none&quot;)
   
   all_p &lt;- draws_sub %&gt;%
-    ggplot(aes(par1, par2)) +
+    ggplot(aes(par1, par2, colour = species)) +
     geom_point(alpha = 0.05) +
     xlab(text1) +
     ylab(text2)
   
-  grid_p #+ all_p + plot_layout(nrow = 2)
+  #grid_p #+ all_p + plot_layout(nrow = 2)
+  all_p
   
 }
 
 
-plot_pars(par1 = stretch, par2 = area, text1 = &quot;&quot;, text2 = &quot;&quot;)
+plot_pars(par1 = shape2, par2 = x_max, text1 = &quot;&quot;, text2 = &quot;&quot;)
 
 
 library(GGally)
-draws %&gt;%
-  select(x_min, maxima, x_max, stretch, species) %&gt;%
-  ggpairs(aes(colour = species, alpha = 0.1), discrete = &quot;facetbar&quot;)</code></pre>
+
+# correl &lt;- draws %&gt;%
+#   filter(draw %in% sample(1:ndraws, 500)) %&gt;%
+#   select(shape1, shape2, x_min, maxima, x_max, stretch, nu, species) %&gt;%
+#   as.data.frame() %&gt;%
+# ggscatmat(columns = 1:7, alpha = 0.05, color = &quot;species&quot;) +
+#   theme(legend.position = &quot;blank&quot;) 
+
+correl &lt;- draws %&gt;%
+  filter(draw %in% sample(1:ndraws, 500)) %&gt;%
+  select(shape1, shape2, x_min, maxima, x_max, stretch, nu, species) %&gt;%
+  ggpairs(
+    1:7, mapping = aes(color = species), 
+  lower = list(continuous = wrap(&quot;points&quot;, alpha = 0.05, size = 1, shape = 1)), 
+  #upper = list(continuous = wrap(&quot;points&quot;, alpha = 0.05, size = 1, shape = 1)),
+  #upper = list(continuous = wrap(&quot;cor&quot;, size = 1, alignPercent = 1)),
+  upper = &quot;blank&quot;
+)
+
+correl
+
+mean_inflor &lt;- emery %&gt;% 
+  group_by(species) %&gt;%
+  summarise(mean_inflor = mean(Inflor_biomass))
+
+mean_depth &lt;- wide_params %&gt;%
+  group_by(species) %&gt;%
+  summarise(mean_depth = mean(Mean),
+            mean_stretch = mean(stretch_sc)) %&gt;%
+  full_join(., mean_inflor, by = &quot;species&quot;)
+
+cor(mean_depth$mean_stretch, mean_depth$mean_inflor)
+
+cairo_pdf(&quot;figures/lm_depth.pdf&quot;)
+mean_depth %&gt;%
+  ggplot(aes(mean_inflor, mean_depth)) +
+  geom_point() +
+  geom_smooth(method = &quot;lm&quot;)
+dev.off()
+
+
+lm(mean_depth ~ mean_inflor, data = mean_depth) %&gt;%
+  summary %&gt;%
+  coef()</code></pre>
 </div>
 
 
