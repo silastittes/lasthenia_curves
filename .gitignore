@@ -1,3 +1,4 @@
+bayes/samples/*
 figures/*.pdf
 .Rproj.user
 .Rhistory

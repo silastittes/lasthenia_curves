@@ -3,10 +3,10 @@ source("tolerance_functions.R")
 #source("load_data.R")
 
 emery <- load_emery() %>%
-<<<<<<< HEAD
+
   select(species, sppint, Inflor_biomass, treat)
 
-tidy_draws <- read.csv("bayes/tidy_parameters.csv") #draws for zero weighted model (generative)
+tidy_draws <- read.csv("bayes/tidy_parameters.csv")
 
 post_pred <- 1:nrow(tidy_draws) %>% 
   map_df(~{
@@ -41,63 +41,10 @@ hist(post_pred$ssq_obs - post_pred$ssq_pseudo, breaks = 100)
 
 
 pred_spp <- post_pred %>% group_by(species) %>%
-=======
-  select(Species, sppint, Inflor_biomass, treat)
-
-zig_draws <- read.csv("bayes/stan_par1_df.csv") #draws for zero weighted model (generative)
-
-post_pred <- 1:nrow(zig_draws) %>% 
-  map_df(~{
-    #post_pred <- 1:100 %>% map_df(~{
-    draw_i <- zig_draws[.x, ]
-    zig_spp <- zig_draws$Species[.x]
-    emery_i <- emery %>% filter(Species == zig_spp)
-  
-    x <- (emery_i$treat - draw_i$d) / (draw_i$e - draw_i$d)
-  
-    mus <- stretch_kumara(
-      x, a = draw_i$a, 
-      b = draw_i$b, 
-      c = draw_i$c
-      )
-  
-  p_zero <- plogis(
-    draw_i$beta_0 + draw_i$beta_1 * mus
-    )
-  
-  #pseudo <- rgamma(n = length(mus), 
-  #                 shape = draw_i$nu, 
-  #                 rate =  draw_i$nu / mus)
-  #zero <- rbinom(n = length(mus), size = 1, p_zero)
-  #pseudo[as.logical(zero)] <- 0
-  
-  
-  pseudo <- rgamma(
-    n = length(mus), shape = draw_i$nu, 
-    rate =  (draw_i$nu * (1 - p_zero)) / mus
-    )
-  
-  data.frame(
-    ssq_obs = sum((mus - emery_i$Inflor_biomass)^2),
-    ssq_pseudo = sum((mus - pseudo)^2),
-    Species = zig_spp
-    #pseudo = pseudo,
-    #Inflor_biomass = emery_i$Inflor_biomass,
-    #Species = zig_spp,
-    #draw = .x
-  )
-
-})
-
-mean(post_pred$ssq_obs > post_pred$ssq_pseudo)
-
-pred_spp <- post_pred %>% group_by(Species) %>%
->>>>>>> 8bcad5c8891359760a8017d70fb8ca697e50d237
   summarise(lab = as.character(mean(ssq_obs > ssq_pseudo) %>% round(2)),
             ssq_obs_mean = ssq_obs %>% mean(),
             ssq_pseudo_mean = ssq_pseudo %>% mean())
 
-<<<<<<< HEAD
 post_pred_pv <- full_join(post_pred, pred_spp, by = "species") %>%
   mutate(species_pv = paste0(species, " (",lab,")"))
 
@@ -116,25 +63,7 @@ post_plot <- post_pred_pv %>% ggplot(aes(x = log(ssq_obs), y = log(ssq_pseudo)))
   theme(text = element_text(size = 10),
         legend.text=element_text(size=5))
 
-=======
-post_pred_pv <- full_join(post_pred, pred_spp, by = "Species") %>%
-  mutate(Species_pv = paste0(Species, " (",lab,")"))
 
-write_csv(pred_spp, "bayes/postpred_zig1_out.csv")
-
-post_plot <- post_pred_pv %>% ggplot(aes(x = ssq_obs, y = ssq_pseudo)) +
-  geom_point(alpha = 0.1, aes(colour = Species_pv)) +
-  #geom_text_repel(data = pred_spp, label = pred_spp$lab, size = 4) +
-  #facet_wrap(~Species, scales = "free") +
-  geom_abline(intercept = 0, slope = 1, lty = 2, col = "blue") +
-  ylab("Posterior predictive ssq") +
-  xlab("Observed ssq") +
-  theme_minimal() +
-  guides(colour = guide_legend(title = "Species", override.aes = list(alpha = 1))) + 
-  theme(text = element_text(size = 10),
-        legend.text=element_text(size=5))
-  
->>>>>>> 8bcad5c8891359760a8017d70fb8ca697e50d237
 post_plot
 
 ggsave("figures/figB12.pdf", width = 5, height = 4, plot = post_plot, device = "pdf")
@@ -145,7 +74,6 @@ ggsave("figures/figB12.pdf", width = 5, height = 4, plot = post_plot, device = "
 # Modeling checking instead using sampled posterior p-values
 
 #Grab a posterior parameter vector at random
-<<<<<<< HEAD
 df_draw1 <- tidy_draws %>% filter(
   draw == sample(1:max(tidy_draws$draw), 1)
 )
@@ -176,73 +104,16 @@ post_pred <- n %>%
           ssq_pseudo = sum((mus - pseudo$trait)^2),
           species = tidy_spp
         )        
-        
-=======
-df_draw1 <- zig_draws %>% filter(
-  draw == sample(1:max(zig_draws$draw), 1)
-  )
 
-#simulate 100 data sets from the random post vector
-post_pred <- 
-  1:500 %>% map_df(~{
-    1:nrow(df_draw1) %>% 
-      map_df(~{
-        draw_i <- df_draw1[.x, ]
-        zig_spp <- df_draw1$Species[.x]
-        emery_i <- emery %>% filter(Species == zig_spp)
-        
-        x <- (emery_i$treat - draw_i$d) / (draw_i$e - draw_i$d)
-        
-        mus <- stretch_kumara(
-          x, a = draw_i$a, 
-          b = draw_i$b, 
-          c = draw_i$c
-        )
-        
-        p_zero <- plogis(
-          draw_i$beta_0 + draw_i$beta_1 * mus
-        )
-        
-        pseudo <- rgamma(
-          n = length(mus), 
-          shape = draw_i$nu, 
-          rate =  (draw_i$nu * (1 - p_zero)) / mus
-        )
-        
-        #pseudo <- rgamma(
-        #  n = length(mus), 
-        #  shape = draw_i$nu, 
-        #  rate =  (draw_i$nu) / mus
-        #)
-        
-        #pseudo[rbinom(length(mus), 1, (1 - p_zero))] <- 0
-        
-        
-        data.frame(
-          
-          ssq_obs = sum((emery_i$Inflor_biomass - mus)^2)/mus,
-          ssq_pseudo = sum((pseudo - mus)^2)/mus,
-          
-          Species = zig_spp
-        )
->>>>>>> 8bcad5c8891359760a8017d70fb8ca697e50d237
-        
       })
   })
 
 #compare ssqs by species
-<<<<<<< HEAD
+
 post_pred %>% group_by(species) %>%
-=======
-post_pred %>% group_by(Species) %>%
->>>>>>> 8bcad5c8891359760a8017d70fb8ca697e50d237
   summarise(lab = as.character(mean(ssq_obs > ssq_pseudo) %>% round(2)),
             ssq_obs = ssq_obs %>% max*.9,
             ssq_pseudo = ssq_pseudo %>% max*.9)
 
 #compare whole ssqs
 mean(post_pred$ssq_obs > post_pred$ssq_pseudo)
-<<<<<<< HEAD
-=======
-
->>>>>>> 8bcad5c8891359760a8017d70fb8ca697e50d237
