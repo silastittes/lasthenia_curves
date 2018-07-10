@@ -36,106 +36,104 @@ spp_order <- data.frame(Sp = emery$species, int = emery$sppint) %>%
 ## commented out to avoid overwriting existing results ##
 #########################################################
 
-# file.create("simulate_axis_results.R")
+zz <- file("sim_axis/simulate_axis_messages.Rout", open="wt")
+sink(zz, type="message")
 
-# zz <- file("sim_axis/simulate_axis_messages.Rout", open="wt")
-# sink(zz, type="message")
+for(x in 1:n_reps){
 
-# for(x in 1:n_reps){
-# 
-#   message(paste0("simulation number:", x))
-#   
-#   rand_df <- tibble(treat = treats,
-#                     rand_treat = as.vector(t(unif_var_df[x, 1:5]))
-#   )
-#   emery_r <- left_join(emery, rand_df, by = "treat")
-# 
-#   #plot(emery_r$rand_treat, emery_r$Inflor_biomass)
-# 
-#   rand_var <- unif_var_df$treat_var[x]
-#   mean_rand <- emery_r$rand_treat %>% unique() %>% sort() %>% mean() - 3
-# 
-#   #c(1,1,1,1,5) %>% sort() %>% diff() %>% var()
-#   #expand.grid(1:5, 1:5, 1:5, 1:5, 1:5) %>% apply(1, function(x) sort(x) %>% diff() %>% var()) %>% summary()
-# 
-#   stan_out <- stan_performance(df = emery_r,
-#                             response = Inflor_biomass,
-#                             treatment = rand_treat,
-#                             group_ids = sppint,
-#                             iter = 200,
-#                             max_treedepth = 15)
-# 
-# 
-#   sim_grad_df <- gen_gradient_df(tolerance_df = perform_df(stan_out, spp_order))
-# 
-# 
-#   summ_stan_df <- sim_grad_df %>%
-#     select(shape1, shape2, stretch, x_min, x_max, maxima) %>%
-#     group_by() %>%
-#     summarise_all(.funs = mean) %>%
-#     mutate(rep = as.integer(x))
-# 
-# 
-#   tidy_rand_mod <- unique(sim_grad_df$draw) %>% map_df(~ {
-#     sim_grad_df %>% filter(draw == .x) %>%
-#       lm(Mean ~ stretch_sc + x_min_sc + x_max_sc +  maxima_sc, data = .) %>%
-#       broom::tidy()
-#   })
-# 
-# 
-#   lm_df <- tidy_rand_mod %>%
-#     group_by(term) %>%
-#     filter(term != "(Intercept)") %>%
-#     summarise(coef = mean(estimate),
-#               #p_value = mean(p.value)) %>%
-#               p_value =  1/mean(1/p.value)) %>%
-#     mutate(rand_var = rand_var,
-#            mean_rand = mean_rand,
-#            sim_n = as.integer(x))
-# 
-# 
-# 
-#   #NON PHYLOGENETIC LASSO CLASSIFICATION BY HABITAT
-#   lasso_all <- sim_grad_df %>% group_by(draw) %>%
-#     do({
-#       test_df <- .
-#       test_df %>% as.data.frame #%>% set_rownames(.$)
-#       test_modmat <- test_df %>% select(contains("_sc")) %>%
-#         select(stretch_sc, x_min_sc, x_max_sc,  maxima_sc) %>%
-#         model.matrix(test_df$aqua_terr2terr_bin ~ . -1, data = .)
-# 
-#       cv_coef <- cv.glmnet(test_modmat,
-#                            test_df$aqua_terr2terr_bin,
-#                            family = "binomial",
-#                            nfolds = nrow(test_modmat),
-#                            grouped = F) %>%
-#         coef(s = "lambda.min") %>%
-#         as.matrix %>%
-#         t %>%
-#         as_tibble
-#     })
-# 
-# 
-#   lasso_df <- lasso_all %>%
-#     ungroup %>%
-#     select(-draw, -`(Intercept)`) %>%
-#     summarise_all(
-#       funs(
-#         mean = mean(., na.rm = T),
-#         prop = mean(. > 0, na.rm = T)
-#       )
-#     ) %>%
-#     gather(variable, value) %>%
-#     separate(variable, c("var", "stat"), sep = "_sc\\_") %>%
-#     spread(stat, value) %>%
-#     mutate(rand_var = rand_var,
-#            mean_rand = mean_rand,
-#            sim_n = as.integer(x))
-# 
-#   run_x <- list(lm_df = lm_df, lasso_df = lasso_df, summ_stan_df = summ_stan_df)
-#   
-#   dump(file = str_glue("sim_axis/simulate_axis_results_{x}.R"), list = "run_x", append = T)
-# }
+  message(paste0("simulation number:", x))
+
+  rand_df <- tibble(treat = treats,
+                    rand_treat = as.vector(t(unif_var_df[x, 1:5]))
+  )
+  emery_r <- left_join(emery, rand_df, by = "treat")
+
+  #plot(emery_r$rand_treat, emery_r$Inflor_biomass)
+
+  rand_var <- unif_var_df$treat_var[x]
+  mean_rand <- emery_r$rand_treat %>% unique() %>% sort() %>% mean() - 3
+
+  #c(1,1,1,1,5) %>% sort() %>% diff() %>% var()
+  #expand.grid(1:5, 1:5, 1:5, 1:5, 1:5) %>% apply(1, function(x) sort(x) %>% diff() %>% var()) %>% summary()
+
+  stan_out <- stan_performance(df = emery_r,
+                            response = Inflor_biomass,
+                            treatment = rand_treat,
+                            group_ids = sppint,
+                            iter = 200,
+                            max_treedepth = 15)
+
+
+  sim_grad_df <- gen_gradient_df(tolerance_df = perform_df(stan_out, spp_order))
+
+
+  summ_stan_df <- sim_grad_df %>%
+    select(shape1, shape2, stretch, x_min, x_max, maxima) %>%
+    group_by() %>%
+    summarise_all(.funs = mean) %>%
+    mutate(rep = as.integer(x))
+
+
+  tidy_rand_mod <- unique(sim_grad_df$draw) %>% map_df(~ {
+    sim_grad_df %>% filter(draw == .x) %>%
+      lm(Mean ~ stretch_sc + x_min_sc + x_max_sc +  maxima_sc, data = .) %>%
+      broom::tidy()
+  })
+
+
+  lm_df <- tidy_rand_mod %>%
+    group_by(term) %>%
+    filter(term != "(Intercept)") %>%
+    summarise(coef = mean(estimate),
+              #p_value = mean(p.value)) %>%
+              p_value =  1/mean(1/p.value)) %>%
+    mutate(rand_var = rand_var,
+           mean_rand = mean_rand,
+           sim_n = as.integer(x))
+
+
+
+  #NON PHYLOGENETIC LASSO CLASSIFICATION BY HABITAT
+  lasso_all <- sim_grad_df %>% group_by(draw) %>%
+    do({
+      test_df <- .
+      test_df %>% as.data.frame #%>% set_rownames(.$)
+      test_modmat <- test_df %>% select(contains("_sc")) %>%
+        select(stretch_sc, x_min_sc, x_max_sc,  maxima_sc) %>%
+        model.matrix(test_df$aqua_terr2terr_bin ~ . -1, data = .)
+
+      cv_coef <- cv.glmnet(test_modmat,
+                           test_df$aqua_terr2terr_bin,
+                           family = "binomial",
+                           nfolds = nrow(test_modmat),
+                           grouped = F) %>%
+        coef(s = "lambda.min") %>%
+        as.matrix %>%
+        t %>%
+        as_tibble
+    })
+
+
+  lasso_df <- lasso_all %>%
+    ungroup %>%
+    select(-draw, -`(Intercept)`) %>%
+    summarise_all(
+      funs(
+        mean = mean(., na.rm = T),
+        prop = mean(. > 0, na.rm = T)
+      )
+    ) %>%
+    gather(variable, value) %>%
+    separate(variable, c("var", "stat"), sep = "_sc\\_") %>%
+    spread(stat, value) %>%
+    mutate(rand_var = rand_var,
+           mean_rand = mean_rand,
+           sim_n = as.integer(x))
+
+  run_x <- list(lm_df = lm_df, lasso_df = lasso_df, summ_stan_df = summ_stan_df)
+
+  dump(file = str_glue("sim_axis/simulate_axis_results_{x}.R"), list = "run_x", append = T)
+}
 
 sink(type="message")
 close(zz)
@@ -146,7 +144,7 @@ rand_sim <- list.files("sim_axis/", full.names = T)[grep("simulate_axis_results"
 lm_all <- rand_sim %>% map_df(~{
   .x$lm_df
 })
-
+ 
 
 lm_all <- rand_sim %>% map_df(~{
   .x$lm_df
@@ -260,6 +258,6 @@ full_join(
   rename(parameter = var) %>%
   ggplot(aes(hi_diff, prop, colour = parameter)) +
   geom_point() +
-  geom_smooth(se = F) +
+  geom_smooth(method = lm, se = F) +
   xlab("Treatment 5 - Treatment 4") +
   ylab("proportion of coefficients > 0")
