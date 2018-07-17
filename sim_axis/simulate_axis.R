@@ -48,8 +48,6 @@ for(x in 1:n_reps){
   )
   emery_r <- left_join(emery, rand_df, by = "treat")
 
-  #plot(emery_r$rand_treat, emery_r$Inflor_biomass)
-
   rand_var <- unif_var_df$treat_var[x]
   mean_rand <- emery_r$rand_treat %>% unique() %>% sort() %>% mean() - 3
 
@@ -74,45 +72,48 @@ for(x in 1:n_reps){
     mutate(rep = as.integer(x))
 
 
-  tidy_rand_mod <- unique(sim_grad_df$draw) %>% map_df(~ {
-    sim_grad_df %>% filter(draw == .x) %>%
-      lm(Mean ~ stretch_sc + x_min_sc + x_max_sc +  maxima_sc, data = .) %>%
-      broom::tidy()
-  })
-
-
-  lm_df <- tidy_rand_mod %>%
-    group_by(term) %>%
-    filter(term != "(Intercept)") %>%
-    summarise(coef = mean(estimate),
-              #p_value = mean(p.value)) %>%
-              p_value =  1/mean(1/p.value)) %>%
-    mutate(rand_var = rand_var,
-           mean_rand = mean_rand,
-           sim_n = as.integer(x))
-
-
-
-  #NON PHYLOGENETIC LASSO CLASSIFICATION BY HABITAT
-  lasso_all <- sim_grad_df %>% group_by(draw) %>%
+  lasso_depth <- sim_grad_df %>%
+    group_by(draw) %>%
     do({
       test_df <- .
-      test_df %>% as.data.frame #%>% set_rownames(.$)
-      test_modmat <- test_df %>% select(contains("_sc")) %>%
-        select(stretch_sc, x_min_sc, x_max_sc,  maxima_sc) %>%
-        model.matrix(test_df$aqua_terr2terr_bin ~ . -1, data = .)
+      test_df <- test_df %>%
+        select(Mean, stretch_sc, maxima_sc, x_max_sc, x_min_sc) %>%
+        drop_na()
+      test_modmat <- model.matrix(Mean ~ . -1, data = test_df)
 
       cv_coef <- cv.glmnet(test_modmat,
-                           test_df$aqua_terr2terr_bin,
-                           family = "binomial",
+                           test_df$Mean,
                            nfolds = nrow(test_modmat),
-                           grouped = F) %>%
+                           grouped = F
+      ) %>%
         coef(s = "lambda.min") %>%
         as.matrix %>%
         t %>%
         as_tibble
     })
 
+
+  lasso_all <- sim_grad_df %>%
+    group_by(draw) %>%
+    do({
+      test_df <- .
+      test_df <- test_df %>%
+        select(aqua_terr2terr_bin, stretch_sc, maxima_sc, x_max_sc, x_min_sc) %>%
+        drop_na()
+
+      test_modmat <- model.matrix(aqua_terr2terr_bin ~ . -1, data = test_df)
+
+      cv_coef <- cv.glmnet(test_modmat,
+                           test_df$aqua_terr2terr_bin,
+                           family = "binomial",
+                           nfolds = nrow(test_modmat),
+                           grouped = F
+      ) %>%
+        coef(s = "lambda.min") %>%
+        as.matrix %>%
+        t %>%
+        as_tibble
+    })
 
   lasso_df <- lasso_all %>%
     ungroup %>%
@@ -130,9 +131,71 @@ for(x in 1:n_reps){
            mean_rand = mean_rand,
            sim_n = as.integer(x))
 
-  run_x <- list(lm_df = lm_df, lasso_df = lasso_df, summ_stan_df = summ_stan_df)
+
+  lasso_depth_df <- lasso_depth %>%
+    ungroup %>%
+    select(-draw, -`(Intercept)`) %>%
+    summarise_all(
+      funs(
+        mean = mean(., na.rm = T),
+        prop = mean(. > 0, na.rm = T)
+      )
+    ) %>%
+    gather(variable, value) %>%
+    separate(variable, c("var", "stat"), sep = "_sc\\_") %>%
+    spread(stat, value) %>%
+    mutate(rand_var = rand_var,
+           mean_rand = mean_rand,
+           sim_n = as.integer(x))
+
+
+  run_x <- list(lasso_df = lasso_df, lasso_depth = lasso_depth_df, summ_stan_df = summ_stan_df)
+  #run_x <- list(lm_df = lm_df, lasso_df = lasso_df, summ_stan_df = summ_stan_df)
 
   dump(file = str_glue("sim_axis/simulate_axis_results_{x}.R"), list = "run_x", append = T)
+  
+  
+  
+  # tidy_rand_mod <- unique(sim_grad_df$draw) %>% map_df(~ {
+  #   sim_grad_df %>% filter(draw == .x) %>%
+  #     lm(Mean ~ stretch_sc + x_min_sc + x_max_sc +  maxima_sc, data = .) %>%
+  #     broom::tidy()
+  # })
+  
+  # lm_df <- tidy_rand_mod %>%
+  #   group_by(term) %>%
+  #   filter(term != "(Intercept)") %>%
+  #   summarise(coef = mean(estimate),
+  #             #p_value = mean(p.value)) %>%
+  #             p_value =  1/mean(1/p.value)) %>%
+  #   mutate(rand_var = rand_var,
+  #          mean_rand = mean_rand,
+  #          sim_n = as.integer(x))
+  
+  
+  
+  #NON PHYLOGENETIC LASSO CLASSIFICATION BY HABITAT
+  # lasso_all <- sim_grad_df %>%
+  #   group_by(draw) %>%
+  #   do({
+  #     test_df <- .
+  #     test_df %>% as.data.frame #%>% set_rownames(.$)
+  #     test_modmat <- test_df %>% select(contains("_sc")) %>%
+  #       select(stretch_sc, x_min_sc, x_max_sc,  maxima_sc) %>%
+  #       model.matrix(test_df$aqua_terr2terr_bin ~ . -1, data = .)
+  #
+  #     cv_coef <- cv.glmnet(test_modmat,
+  #                          test_df$aqua_terr2terr_bin,
+  #                          family = "binomial",
+  #                          nfolds = nrow(test_modmat),
+  #                          grouped = F) %>%
+  #       coef(s = "lambda.min") %>%
+  #       as.matrix %>%
+  #       t %>%
+  #       as_tibble
+  #   })
+  
+  
 }
 
 sink(type="message")
@@ -141,16 +204,14 @@ close(zz)
 rand_sim <- list.files("sim_axis/", full.names = T)[grep("simulate_axis_results", list.files("sim_axis/"))] %>% 
   map(~source(.x)$value)
 
-lm_all <- rand_sim %>% map_df(~{
-  .x$lm_df
-})
- 
+
+# rand_sim <- c("sim_axis//simulate_axis_results_1.R", "sim_axis//simulate_axis_results_50.R", "sim_axis//simulate_axis_results_100.R")%>% 
+#   map(~source(.x)$value)
 
 lm_all <- rand_sim %>% map_df(~{
-  .x$lm_df
+  .x$lasso_depth
 })
 
-lm_all %>% arrange(p_value)
 #range(lm_all$rand_var, na.rm = T)
 
 lasso_all <- rand_sim %>% map_df(~{
@@ -192,7 +253,7 @@ dev.off()
 
 alph <- 0.2
 p1 <- lm_all %>% 
-  ggplot(aes(rand_var, coef, colour = term)) +
+  ggplot(aes(rand_var, mean, colour = var)) +
   geom_point(alpha = alph) +
   geom_smooth(method = "lm", se=F) +
   ggtitle("pool depth gradient") +
@@ -201,19 +262,20 @@ p1 <- lm_all %>%
   theme(legend.position = "none") 
 
 p2 <- lm_all %>% 
-  ggplot(aes(rand_var, p_value, colour = term)) +
+  ggplot(aes(rand_var, prop, colour = var)) +
   geom_point(alpha = alph) +
   geom_smooth(method = "lm", se=F) +
   xlab("variance of differences") +
-  ylab("harmonic mean p value") +
+  ylab("proportion of coefficients > 0") +
   theme(legend.position = "none")
+
 
 p3 <- lasso_all %>% 
   ggplot(aes(rand_var, mean, colour = var)) +
   geom_point(alpha = alph) +
   geom_smooth(method = "lm", se=F) +
   ggtitle("habitat") + 
-  ylab("coefficient mean") +
+  ylab("") +
   xlab("") +
   guides(colour=guide_legend(title="Coefficients")) +
   scale_color_discrete()
@@ -223,7 +285,7 @@ p4 <- lasso_all %>%
   geom_point(alpha = alph) +
   geom_smooth(method = "lm", se=F) +
   xlab("variance of differences") +
-  ylab("proportion of coefficients > 0") +
+  ylab("") +
   theme(legend.position = "none")
 
 cairo_pdf(filename = "figures/B16.pdf", width = 7, height = 5)
@@ -245,19 +307,19 @@ dev.off()
 
 
 
-full_join(
-  lasso_all,
-  unif_var_df %>%
-    mutate(sim_n = 1:n()), 
-  by = "sim_n"
-) %>%
-  mutate(hi_diff = V5 - V4) %>%
-  filter(var %in% c("x_min", "x_max")) %>%
-  #mutate(var = gsub(pattern = "d", replacement = "δ", var)) %>%
-  #mutate(var = gsub(pattern = "e", replacement = "ε", var)) %>%
-  rename(parameter = var) %>%
-  ggplot(aes(hi_diff, prop, colour = parameter)) +
-  geom_point() +
-  geom_smooth(method = lm, se = F) +
-  xlab("Treatment 5 - Treatment 4") +
-  ylab("proportion of coefficients > 0")
+# full_join(
+#   lasso_all,
+#   unif_var_df %>%
+#     mutate(sim_n = 1:n()), 
+#   by = "sim_n"
+# ) %>%
+#   mutate(hi_diff = V5 - V4) %>%
+#   filter(var %in% c("x_min", "x_max")) %>%
+#   #mutate(var = gsub(pattern = "d", replacement = "δ", var)) %>%
+#   #mutate(var = gsub(pattern = "e", replacement = "ε", var)) %>%
+#   rename(parameter = var) %>%
+#   ggplot(aes(hi_diff, prop, colour = parameter)) +
+#   geom_point() +
+#   geom_smooth(method = lm, se = F) +
+#   xlab("Treatment 5 - Treatment 4") +
+#   ylab("proportion of coefficients > 0")

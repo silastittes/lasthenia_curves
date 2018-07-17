@@ -228,23 +228,23 @@ dev.off()
 
 
 ##LASSO CLASSIFICATION BY HABITAT---------
-
 lasso_all <- wide_params %>% 
   filter(draw %in% draw_n) %>%
-  #filter(species != "glaberrima") %>%
   group_by(draw) %>%
   do({
     test_df <- . 
-    test_df %>% as.data.frame %>% set_rownames(.$species)
-    test_modmat <- test_df %>% select(contains("_sc")) %>%
-      select(stretch_sc, maxima_sc, x_max_sc, x_min_sc) %>%
-      model.matrix(test_df$aqua_terr2terr_bin ~ . -1, data = .)
+    test_df <- test_df %>%
+      select(aqua_terr2terr_bin, stretch_sc, maxima_sc, x_max_sc, x_min_sc) %>%
+      drop_na()
+      
+    test_modmat <- model.matrix(aqua_terr2terr_bin ~ . -1, data = test_df)
+      
     cv_coef <- cv.glmnet(test_modmat, 
                          test_df$aqua_terr2terr_bin,
                          family = "binomial", 
                          nfolds = nrow(test_modmat),
-                         grouped = F, 
-                         lambda = exp(seq(log(0.01), log(10), length.out=100))
+                         grouped = F
+                         #lambda = exp(seq(log(0.01), log(10), length.out=100))
                          ) %>%
       coef(s = "lambda.min") %>% 
       as.matrix %>% 
@@ -253,35 +253,35 @@ lasso_all <- wide_params %>%
   })
 
 
-perms <- 100
-lasso_permute <- wide_params %>% 
-  filter(draw %in% draw_n) %>%
-  #filter(species != "glaberrima") %>%
-  group_by(draw) %>%
-  do({
-    test_df <- . 
-    test_df %>% as.data.frame %>% set_rownames(.$species)
-    test_modmat <- test_df %>% select(contains("_sc")) %>%
-      select(stretch_sc, maxima_sc, x_max_sc, x_min_sc) %>%
-      model.matrix(test_df$aqua_terr2terr_bin ~ . -1, data = .)
-    
-    1:perms %>% map_df(~{
-    cv_coef <- cv.glmnet(test_modmat, 
-                         sample(test_df$aqua_terr2terr_bin,replace = F),
-                         family = "binomial", 
-                         nfolds = nrow(test_modmat),
-                         grouped = F, 
-                         lambda = exp(seq(log(0.01), log(10), length.out=100))
-                         
-
-    ) %>%
-      coef(s = "lambda.min") %>% 
-      as.matrix %>% 
-      t %>% 
-      as_tibble %>%
-      mutate(perm  = .x)
-    })
-  })
+# perms <- 100
+# lasso_permute <- wide_params %>% 
+#   filter(draw %in% draw_n) %>%
+#   #filter(species != "glaberrima") %>%
+#   group_by(draw) %>%
+#   do({
+#     test_df <- . 
+#     test_df %>% as.data.frame %>% set_rownames(.$species)
+#     test_modmat <- test_df %>% select(contains("_sc")) %>%
+#       select(stretch_sc, maxima_sc, x_max_sc, x_min_sc) %>%
+#       model.matrix(test_df$aqua_terr2terr_bin ~ . -1, data = .)
+#     
+#     1:perms %>% map_df(~{
+#     cv_coef <- cv.glmnet(test_modmat, 
+#                          sample(test_df$aqua_terr2terr_bin,replace = F),
+#                          family = "binomial", 
+#                          nfolds = nrow(test_modmat),
+#                          grouped = F, 
+#                          lambda = exp(seq(log(0.01), log(10), length.out=100))
+#                          
+# 
+#     ) %>%
+#       coef(s = "lambda.min") %>% 
+#       as.matrix %>% 
+#       t %>% 
+#       as_tibble %>%
+#       mutate(perm  = .x)
+#     })
+#   })
 
 
 #wide_params %>% filter(draw == 1) %>% select(stretch_sc, maxima_sc, x_max_sc, x_min_sc) %>% cov
@@ -323,36 +323,36 @@ summ_lasso <- function(df){
 
 
 count_empty(lasso_all)
-count_empty(lasso_permute)
 
 summ_lasso(lasso_all) %>%
   xtable(caption = "something here", digits = 3) %>% 
   print.xtable(include.rownames=FALSE, file = "derived_files/lasso.tex")
 
+#count_empty(lasso_permute)
 
-summ_lasso(lasso_permute) %>%
-    xtable(caption = "something here", digits = 3) %>% 
-  print.xtable(include.rownames=FALSE, file = "derived_files/lasso_permute.tex")
+# summ_lasso(lasso_permute) %>%
+#     xtable(caption = "something here", digits = 3) %>% 
+#   print.xtable(include.rownames=FALSE, file = "derived_files/lasso_permute.tex")
 
 
-sign_permute <- lasso_permute %>% 
-  ungroup %>%
-  group_by(perm) %>%
-  select(stretch_sc, maxima_sc, x_max_sc, x_min_sc) %>%
-  summarise_all(
-    funs(
-      sign_bias = ifelse( mean(. > 0) / mean(. < 0) < 1,
-                          1 / (mean(. > 0) / mean(. < 0)) ,
-                          mean(. > 0) / mean(. < 0) )
-    )
-  )
-
-sign_permute %>%
-  ungroup() %>%
-  select(-perm) %>%
-  gather(param, value) %>%
-  pull(value) %>%
-  hist()
+# sign_permute <- lasso_permute %>% 
+#   ungroup %>%
+#   group_by(perm) %>%
+#   select(stretch_sc, maxima_sc, x_max_sc, x_min_sc) %>%
+#   summarise_all(
+#     funs(
+#       sign_bias = ifelse( mean(. > 0) / mean(. < 0) < 1,
+#                           1 / (mean(. > 0) / mean(. < 0)) ,
+#                           mean(. > 0) / mean(. < 0) )
+#     )
+#   )
+# 
+# sign_permute %>%
+#   ungroup() %>%
+#   select(-perm) %>%
+#   gather(param, value) %>%
+#   pull(value) %>%
+#   hist()
 
 
 ### Phylogenetic Independent Contrasts---------
@@ -396,3 +396,56 @@ cor_c_e %>%
 par(mfrow = c(1,2))
 hist(cor_c_e$cor_cor, breaks = 500)
 hist(cor_c_e$pic_cor, breaks = 500)
+
+
+
+
+
+#lasso for depth
+lasso_depth <- wide_params %>% 
+  filter(draw %in% draw_n) %>%
+  group_by(draw) %>%
+  do({
+    test_df <- . 
+      test_df <- test_df %>%
+        select(Mean, stretch_sc, maxima_sc, x_max_sc, x_min_sc) %>%
+      drop_na()
+      test_modmat <- model.matrix(Mean ~ . -1, data = test_df)
+    
+    cv_coef <- cv.glmnet(test_modmat, 
+                         test_df$Mean,
+                         nfolds = nrow(test_modmat),
+                         grouped = F
+    ) %>%
+      coef(s = "lambda.min") %>% 
+      as.matrix %>% 
+      t %>% 
+      as_tibble
+  })
+
+
+count_empty(lasso_depth)
+
+summ_lasso(lasso_depth) %>%
+  xtable(caption = "something here", digits = 3)
+  #print.xtable(include.rownames=FALSE, file = "derived_files/lasso.tex")
+
+
+
+mean_inflor <- 
+  emery %>%
+  group_by(species) %>%
+  summarise(mean_inflor = mean(Inflor_biomass))
+
+mean_df <- 
+  wide_params %>%
+  group_by(species) %>%
+  summarise(mean_depth = mean(Mean),
+            mean_stretch = mean(stretch)) %>%
+  full_join(., mean_inflor, by = "species")
+
+
+cor.test(emery$Veg_biomass, emery$Inflor_biomass, method = "spearman")
+cor.test(mean_df$mean_depth, mean_df$mean_inflor)
+cor.test(mean_df$mean_stretch, mean_df$mean_inflor)
+
