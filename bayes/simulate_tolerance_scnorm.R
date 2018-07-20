@@ -79,23 +79,32 @@ sim_curves <- function(n_spp,
   #check performance
   params <- c("shape1", "shape2", "stretch", "x_min", "x_max", "nu")
   sim_val <- params %>% map(function(p){
+    
     truth <- true_params[[p]]
+    
     if(length(dim(posts[[p]])) == 1){
       qs <- quantile(posts[[p]], probs = c(0.025,0.975))
       lglz <- seq_along(truth) %>% map_lgl(~{
         qs[1] < truth[.x] & qs[2] > truth[.x] 
       }) %>% mean()
+      
       probs <- 1:length(truth) %>%
         map_dbl(function(xx){mean(posts[[p]] > truth[xx])})
+      
       diffs <- 1:length(truth) %>%
         map_dbl(function(xx){mean(posts[[p]] - truth[xx])})
+      
     } else{
+      
       qs <- apply(posts[[p]], 2, quantile, probs = c(0.025,0.975))  
+      
       lglz <- seq_along(truth) %>% map_lgl(~{
         qs[1, .x] < truth[.x] & qs[2,.x] > truth[.x] 
       }) %>% mean()
+      
       probs <- 1:ncol(posts[[p]]) %>%
         map_dbl(function(xx){mean(posts[[p]][,xx] > truth[xx])})
+      
       diffs <- 1:ncol(posts[[p]]) %>%
         map_dbl(function(xx){mean(posts[[p]][,xx] - truth[xx])})
       
@@ -129,23 +138,6 @@ sim_curves <- function(n_spp,
   )
 }
 
-
-
-#simulation conditions
-
-# #priors (others keep defaults)
-# shp1 <- 2
-# shp2 <- 2
-# nshp <- 8
-# nscl <- 3
-# stch <- 2
-# 
-# true_params <- sim_tolerance_data(n_spp = n_spp, 
-#                                   nu_pr_shape = nshp, 
-#                                   nu_pr_scale = nscl, 
-#                                   stretch_pr_mu = stch, 
-#                                   shape1_pr_mu = shp1, 
-#                                   shape2_pr_mu = shp2)
 
 
 n_spp <- 14

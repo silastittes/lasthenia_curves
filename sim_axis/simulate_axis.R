@@ -230,7 +230,7 @@ sum_all %>%
 theme_set(theme_minimal())
 
 
-cairo_pdf(filename = "figures/B15.pdf")
+cairo_pdf(filename = "figures/B14.pdf")
 par(mfrow = c(1, 1))
 plot(NA, NA, type = "n", xlim = c(1,5), ylim =c(100,1),
      ylab = "simulation index", xlab = "treatment value")
@@ -288,22 +288,22 @@ p4 <- lasso_all %>%
   ylab("") +
   theme(legend.position = "none")
 
-cairo_pdf(filename = "figures/B16.pdf", width = 7, height = 5)
+cairo_pdf(filename = "figures/B15.pdf", width = 7, height = 5)
 p1 + p3 + p2 + p4
 dev.off()
 
 
-cairo_pdf(filename = "figures/B17.pdf")
-sum_all %>%
-  #select(-) %>%
-  group_by(rep) %>%
-  #rename(α=a, β = b, ζ = c, δ = d, ε = e, β_0 = beta_0,  β_1 = beta_1, optimum = maxima) %>%
-  summarise_all(.funs = mean) %>%
-  gather(param, value, -rep) %>%
-  ggplot(aes(x = value)) +
-  geom_histogram() +
-  facet_wrap(~param, scales = "free")
-dev.off()
+# cairo_pdf(filename = "figures/B17.pdf")
+# sum_all %>%
+#   #select(-) %>%
+#   group_by(rep) %>%
+#   #rename(α=a, β = b, ζ = c, δ = d, ε = e, β_0 = beta_0,  β_1 = beta_1, optimum = maxima) %>%
+#   summarise_all(.funs = mean) %>%
+#   gather(param, value, -rep) %>%
+#   ggplot(aes(x = value)) +
+#   geom_histogram() +
+#   facet_wrap(~param, scales = "free")
+# dev.off()
 
 
 
