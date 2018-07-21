@@ -84,7 +84,7 @@ sig %>% group_by(param) %>%
 #sig_den <- sig %>% group_by(param) %>%
 #  do(den = density(sig$signal))
 
-cairo_pdf("figures/fig4.pdf")
+cairo_pdf("figures/C2.pdf")
 #png(filename = "figures/signal.png")
 sig %>%
   mutate(param = sub("maxima", "optima", param)) %>%

@@ -406,7 +406,7 @@ plot_dag()
 
 ## New concept fig
 ```{r}
-cairo_pdf(filename = "figures/fig2_new.pdf")
+cairo_pdf(filename = "figures/fig2.pdf")
 par(mfrow = c(2,1))
 plot_dag()
 plot_concept()
@@ -504,7 +504,7 @@ se <- plot_err(var = Mean_mean, var_lo = mmse, var_hi = mpse, param = "depth (cm
   theme(panel.border = element_rect(colour = alpha("black", 0.5), fill=NA, size=0.5))
   
 
-cairo_pdf(filename = "figures/fig3.pdf", width = 9, height = 5)
+cairo_pdf(filename = "figures/fig4.pdf", width = 9, height = 5)
 d + maxi + e + c + se + plot_layout(nrow = 1)
 dev.off()
 
@@ -666,7 +666,7 @@ spp_list <- rev(lasth$tip.label[lasth$edge[,2][lasth$edge[,2] <= length(lasth$ti
 #png(filename = "figures/fig3_tree_tolerance.png") #alt
 
 
-pdf("figures/fig2.pdf") #alt
+pdf("figures/fig3.pdf") #alt
 #svg("figures/fig3_tree_tolerance.svg") #alt
 
 c1 <- rep(1, length(spp_list))
@@ -696,6 +696,7 @@ nodelabels(node_fmt, frame = "n",
 
 legend("bottomleft", c("Terrestrial", "Vernal pool"), pch = 22, pt.cex = 1.5,
        pt.bg = colz, cex = 1.2, bg = "white")
+
 
 
 set.seed(123)
@@ -766,7 +767,10 @@ for(spp in spp_list){
   #points(mean_opt_df$x, mean_opt_df$mu, pch = "|", cex = 0.75, col = alpha("black", 0.5))
   abline(v = mean_opt, lty = 2, col = alpha("black", 0.5), lwd = 0.75)
   
-  legend("topleft", spp, bty="n", text.font = 3)
+  hab_init <- substr(state_reg_aqua_terr2terr[spp], 1, 1)
+  legend("topleft", str_glue("{spp}({hab_init})"), bty="n", text.font = 3)
+  
+  
 }
 
 #axis(side = 2, cex.axis = 0.85, las = 1, tck = -0.02, mgp=c(0, 0.2, 0))
