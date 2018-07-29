@@ -976,31 +976,6 @@ correl <- draws %>%
   upper = "blank"
 )
 
-correl
-
-mean_inflor <- emery %>% 
-  group_by(species) %>%
-  summarise(mean_inflor = mean(Inflor_biomass))
-
-mean_depth <- wide_params %>%
-  group_by(species) %>%
-  summarise(mean_depth = mean(Mean),
-            mean_stretch = mean(stretch_sc)) %>%
-  full_join(., mean_inflor, by = "species")
-
-cor(mean_depth$mean_stretch, mean_depth$mean_inflor)
-
-cairo_pdf("figures/lm_depth.pdf")
-mean_depth %>%
-  ggplot(aes(mean_inflor, mean_depth)) +
-  geom_point() +
-  geom_smooth(method = "lm")
-dev.off()
-
-
-lm(mean_depth ~ mean_inflor, data = mean_depth) %>%
-  summary %>%
-  coef()
-
+ggsave(filename = "~/Desktop/lasth_corr.png", plot = correl, device = "png", dpi = 320)
 ```
 
