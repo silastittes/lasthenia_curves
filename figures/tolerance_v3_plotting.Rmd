@@ -406,7 +406,7 @@ plot_dag()
 
 ## New concept fig
 ```{r}
-cairo_pdf(filename = "figures/fig2.pdf")
+cairo_pdf(filename = "figures/fig1.pdf")
 par(mfrow = c(2,1))
 plot_dag()
 plot_concept()
@@ -504,7 +504,7 @@ se <- plot_err(var = Mean_mean, var_lo = mmse, var_hi = mpse, param = "depth (cm
   theme(panel.border = element_rect(colour = alpha("black", 0.5), fill=NA, size=0.5))
   
 
-cairo_pdf(filename = "figures/fig4.pdf", width = 9, height = 5)
+cairo_pdf(filename = "figures/fig3.pdf", width = 9, height = 5)
 d + maxi + e + c + se + plot_layout(nrow = 1)
 dev.off()
 
@@ -666,7 +666,7 @@ spp_list <- rev(lasth$tip.label[lasth$edge[,2][lasth$edge[,2] <= length(lasth$ti
 #png(filename = "figures/fig3_tree_tolerance.png") #alt
 
 
-pdf("figures/fig3.pdf") #alt
+pdf("figures/fig2.pdf") #alt
 #svg("figures/fig3_tree_tolerance.svg") #alt
 
 c1 <- rep(1, length(spp_list))
@@ -768,7 +768,7 @@ for(spp in spp_list){
   abline(v = mean_opt, lty = 2, col = alpha("black", 0.5), lwd = 0.75)
   
   hab_init <- substr(state_reg_aqua_terr2terr[spp], 1, 1)
-  legend("topleft", str_glue("{spp}({hab_init})"), bty="n", text.font = 3)
+  legend("topleft", str_glue("{spp} ({hab_init})"), bty="n", text.font = 3)
   
   
 }
@@ -855,6 +855,7 @@ plt_params <- function(p, den_rng, pr_mu, pr_sd, trunc, prior = T){
     geom_density(aes(x = val, color = species), lwd = 0.75, alpha = 0.25) +
     ggtitle(param_letters$value[p]) +
     theme_minimal() +
+    xlab("posterior values") +
     xlim(den_rng[1], den_rng[2]) +
     theme(plot.title = element_text(hjust = 0.5))
   
