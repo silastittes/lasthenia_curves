@@ -258,7 +258,9 @@ plot_concept <- function(){
   
 }
 
+#pdf("~/Dropbox/drosophila_curves/figs/concept.pdf")
 plot_concept()
+#dev.off()
 ```
 
 ## DAG
