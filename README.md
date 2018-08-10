@@ -1,4 +1,4 @@
-Data and code for "Grow where you thrive, or where only you can survive? An analysis of performance curve evolution in a clade with diverse habitat affinities"
+Data and code for "Grow where you thrive, or where only you can survive? An analysis of performance curve evolution in a clade with diverse habitat affinities".
 
 The manuscript is currently in review. Below are some details about how this repository is organized for those interested in reproducing analyses reported in the paper.
 
@@ -9,9 +9,9 @@ As described in the vignette, if you are not using a computer with Linux, be sur
     devtools::install_github("silastittes/performr", local = FALSE)
 
 
-I have attempted to write code to install missing packages, but inevitably, users that want to reproduce ALL analyses will need to spend some time getting all the dependencies working. Fortunately, R and GNU make do a pretty good job of raising errors readable errors.
+I have attempted to write code to install missing packages, but inevitably, users that want to reproduce ALL analyses will need to spend some time getting all the dependencies working on their machines. Fortunately, R and GNU make do a pretty good job of raising errors readable errors.
 
-Details about files and subdirectories in this repository:
+Details about files and subdirectories in this repository are as follows:
 
 Files
 =====
@@ -28,7 +28,7 @@ The makefile will run the majority of the analyses reported in the paper, which 
     make
 
 
-If you are familiar with GNU make, reading the file will likely be a helpful guide at what the other files are doing.
+If you are familiar with GNU make, reading the `Makefile` will likely be a helpful guide for what is needed to reproduce the data.
 
 
 tolerance_functions.R and load_data.R
@@ -46,7 +46,7 @@ Code for regressions and correlations of tolerance curve parameters and habitat.
 randeffect_block.R
 -------------------
 
-A secondary analysis to bolster the reported relationship between taxonomic pool depth and a parameter that control maximum floral biomass.
+A secondary analysis to defend our not using block in the model.
 
 
 Directories
@@ -55,7 +55,7 @@ Directories
 bayes/
 -----
 
-Files related to fitting the model, model validation with simulated data, and computing Bayesian p-values. The posterior draws are also written to file and contained within the `samples/` subdirectory.
+Files related to fitting the model, model validation with simulated data, and computing Bayesian p-values. The posterior draws (and other model outputs) are also written to file and contained within the `samples/` subdirectory. Hopefully the names are clear as to what they contain. Please ask me if not.
 
 
 data/
@@ -72,18 +72,17 @@ Various files output by analyses.
 figures/
 --------
 
-Also just like it sounds! Figures are ignored to save space, so running make is essential if you want to look at. The `tolerance_v3_plotting.Rmd` contains code to generate almost all the figures. I used Rmd to help keep the code organized, the html output is very boring. 
+Also just like it sounds! Figures are ignored to save space, so running make is essential if you want to look at. The `tolerance_v3_plotting.Rmd` contains code to generate almost all the figures. I used Rmd to help keep the code organized, the html output is very boring. Some last minute changes to figure names were made, so these do not match the paper at the moment, unfortunately.
 
 phylo_sig/
 --------
 
-Code to run phylogenetic signal analysis. 
+Code to run phylogenetic signal analyses. 
 
 sim_axis/
 --------
 
 In the paper, we simulated random spacing in the environmental access to see what effect it would have on our inferences. This required running the core model 100 times. This takes a few days to run, so was not included in the make file, but it quite easy to run. Lines 204 onward can be used with the 100 existing files.
-
 
 
 That pretty much does it. Please let me know if anything fails, or if you have general questions about what was done.
