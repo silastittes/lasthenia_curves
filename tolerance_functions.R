@@ -7,7 +7,7 @@
 pkgs <- c("devtools", "scales", "tidyverse", "parallel", 
           "magrittr", "truncnorm", "geomorph", 
           "ape", "phytools", "rstan", 
-          "gdata", "xtable", "abind",
+          "openxlsx", "xtable", "abind",
           "glmnet", "nlme", "ggrepel",
           "ggjoy", "rlang", "stringr", "rethinking", 
           "patchwork", "ggridges"
@@ -89,7 +89,7 @@ opar$page <- NULL
 
 load_emery <- function(){
   holo <- c("ferrisiae", "glabrata", "coulteri", "chrysantha")
-  emery <- gdata::read.xls("data/Inundation_compiled_FINAL.xlsx") %>%
+  emery <- openxlsx::read.xls("data/Inundation_compiled_FINAL.xlsx") %>%
     rename(species = Species) %>%
     mutate(Inflor_biomass = ifelse(
       is.na(Inflor_biomass) &
