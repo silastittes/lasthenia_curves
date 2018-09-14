@@ -89,7 +89,7 @@ opar$page <- NULL
 
 load_emery <- function(){
   holo <- c("ferrisiae", "glabrata", "coulteri", "chrysantha")
-  emery <- openxlsx::read.xls("data/Inundation_compiled_FINAL.xlsx") %>%
+  emery <- openxlsx::read.xlsx("data/Inundation_compiled_FINAL.xlsx") %>%
     rename(species = Species) %>%
     mutate(Inflor_biomass = ifelse(
       is.na(Inflor_biomass) &
