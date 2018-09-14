@@ -4,20 +4,20 @@
 ################################
 ################################
 
-#pkgs <- c("devtools", "scales", "tidyverse", "parallel", 
-#          "magrittr", "truncnorm", "geomorph", 
-#          "ape", "phytools", "rstan", 
-#          "gdata", "xtable", "abind",
-#          "glmnet", "nlme", "ggrepel",
-#          "ggjoy", "rlang", "stringr", "rethinking", 
-#          "patchwork", "ggridges"
-#)
+pkgs <- c("devtools", "scales", "tidyverse", "parallel", 
+          "magrittr", "truncnorm", "geomorph", 
+          "ape", "phytools", "rstan", 
+          "gdata", "xtable", "abind",
+          "glmnet", "nlme", "ggrepel",
+          "ggjoy", "rlang", "stringr", "rethinking", 
+          "patchwork", "ggridges"
+)
 
-#needed <- pkgs[!(pkgs %in% installed.packages()[,"Package"])]
+needed <- pkgs[!(pkgs %in% installed.packages()[,"Package"])]
 
-#if(length(needed)) install.packages(needed, dependencies = TRUE)
+if(length(needed)) install.packages(needed, dependencies = TRUE)
 
-#devtools::install_github("silastittes/performr")
+devtools::install_github("silastittes/performr")
 
 ################
 ################
