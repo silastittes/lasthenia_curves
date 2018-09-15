@@ -4,7 +4,6 @@ all: 	figures/fig1.pdf \
 			derived_files/lasth_100_post.R \
 			$(SAMPLES) \
 			figures/figB12.pdf \
-			figures/fig2.pdf \
 			derived_files/curve_K.csv \
 			figures/fig3.pdf \
 			derived_files/pgls.tex \
