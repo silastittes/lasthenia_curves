@@ -87,6 +87,7 @@ opar$page <- NULL
 ####################
 ####################
 
+
 load_emery <- function(){
   holo <- c("ferrisiae", "glabrata", "coulteri", "chrysantha")
   emery <- openxlsx::read.xlsx("data/Inundation_compiled_FINAL.xlsx") %>%
@@ -112,20 +113,17 @@ load_emery <- function(){
     ) %>%
     filter(!is.na(Inflor_biomass)) %>%
     group_by(species) %>%
-    mutate(sppint = as.integer(species)) %>%
     mutate(
       species_h = ifelse(
         as.character(species) %in% holo,
         "hologymne", as.character(species)
-      ),
-      sppint_h = as.integer(as.factor(species_h))
+      )
     ) %>% 
     ungroup() %>% 
-    mutate(Inflor_biomass = Inflor_biomass/mean(Inflor_biomass)
-           #treat = (treat  - mean(treat))
+    mutate(Inflor_biomass = Inflor_biomass/mean(Inflor_biomass),
+           sppint = as.integer(factor(species)),
+           sppint_h = as.integer(as.factor(species_h))
            )
-           
-  
   return(emery)
 }
 
