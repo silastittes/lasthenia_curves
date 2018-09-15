@@ -93,7 +93,7 @@ load_emery <- function(){
     rename(species = Species) %>%
     mutate(Inflor_biomass = ifelse(
       is.na(Inflor_biomass) &
-        ifEmerge.Y.N. == 1, yes =  0,
+        `ifEmerge(Y/N)` == 1, yes =  0,
       no = Inflor_biomass)) %>%
     mutate(
       treat = ifelse(
