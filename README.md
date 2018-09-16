@@ -1,5 +1,7 @@
 Data and code for "Grow where you thrive, or where only you can survive? An analysis of performance curve evolution in a clade with diverse habitat affinities".
 
+Please note, there is now a separate [repository](https://github.com/silastittes/lasthenia_docker) and [Docker container](https://hub.docker.com/r/silastittes/lasthenia_docker/) to facilitate reproducing these analyses. Those interested in reproducing analyses of the paper are highly encourage to follow the README for the container (readme is the same for both pages linked above). 
+
 The manuscript is currently in review. Below are some details about how this repository is organized for those interested in reproducing analyses reported in the paper.
 
 Firstly, readers are encouraged to peruse the performr package's [vignette page](https://silastittes.github.io/performr/), which contains helpful details about installation and usage.
@@ -9,7 +11,7 @@ As described in the vignette, if you are not using a computer with Linux, be sur
     devtools::install_github("silastittes/performr", local = FALSE)
 
 
-I have attempted to write code to install missing packages, but inevitably, users that want to reproduce ALL analyses will need to spend some time getting all the dependencies working on their machines. Fortunately, R and GNU make do a pretty good job of raising errors readable errors.
+I have attempted to write code to install missing packages, but inevitably, users that want to reproduce ALL analyses will need to spend some time getting all the dependencies working on their machines (hence, the containerized version above). Fortunately, R and GNU make do a pretty good job of raising errors readable errors.
 
 Details about files and subdirectories in this repository are as follows:
 
@@ -22,8 +24,8 @@ Makefile
 
 The makefile will run the majority of the analyses reported in the paper, which should take somewhere around 20 - 40 minutes to complete. In the terminal, write:
 
-    #change the date on R files to trigger make to run
-    touch */*.R
+    #change the date on files to trigger make to run
+    touch */*
     #run make
     make
 
