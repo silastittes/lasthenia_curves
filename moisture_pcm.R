@@ -4,7 +4,6 @@ source("load_data.R")
 select <- dplyr::select
 rename <- dplyr::rename
 
-
 #nothing missing in either direction
 tree_miss <- as.character(unique(emery$species))[!as.character(unique(emery$species)) %in% unique(grad$species)]
 unique(grad$species)[!unique(grad$species) %in% as.character(unique(emery$species))]
@@ -230,6 +229,18 @@ dev.off()
 
 lm(mean_depth ~ mean_inflor, data = mean_df) %>%
   summary()
+
+
+cairo_pdf("~/Desktop/stretch_pool.pdf")
+mean_df %>%
+  ggplot(aes(mean_depth, mean_stretch)) +
+  geom_point(size = 2) +
+  geom_smooth(method = "lm", se = F) +
+  ylab("Mean Stretch") +
+  xlab("Mean pool depth") +
+  theme_classic(base_size = 20)
+dev.off()
+
 
 
 ##POOL DEPTH REGRESSION---------

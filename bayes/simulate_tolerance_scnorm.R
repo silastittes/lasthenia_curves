@@ -196,5 +196,5 @@ for(i in 1:2){
     geom_line(data = simz_out[[i]]$true_curves, aes(x, trait), colour = "black") +
     geom_point(alpha = 0.9, size = 0.5, colour = "grey") +
     theme_minimal()
-    ggsave(filename = str_glue("figures/validate_{i}.pdf"), sim_i)
+    ggsave(filename = str_glue("figures/B{i}.pdf"), sim_i)
 }

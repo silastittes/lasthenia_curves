@@ -66,7 +66,7 @@ post_plot <- post_pred_pv %>% ggplot(aes(x = log(ssq_obs), y = log(ssq_pseudo)))
 
 post_plot
 
-ggsave("figures/figB12.pdf", width = 5, height = 4, plot = post_plot, device = "pdf")
+ggsave("figures/B10.pdf", plot = post_plot, device = "pdf")
 #ggsave("analyses_and_viz/postpred.png", plot = post_plot, device = "png")
 
 

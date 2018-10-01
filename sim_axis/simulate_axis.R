@@ -19,8 +19,6 @@ unif_var_df <- treat_var_df %>% slice(grad_idx)
 unif_var_df[1,] <- c(1,2,3,4,5, 0)
 range(unif_var_df$treat_var)
 
-apply(unif_var_df[, 1:5], 1, function(x) length(unique(x)))
-
 
 #generate random locations for x axis 
 #output is original data "emery" data frame with rand_treat column appended
@@ -210,13 +208,18 @@ rand_sim <- list.files("sim_axis/", full.names = T)[grep("simulate_axis_results"
 
 lm_all <- rand_sim %>% map_df(~{
   .x$lasso_depth
-})
+}) %>%
+  mutate(var = ifelse(var == "maxima", "optimum", var))
+
+  
 
 #range(lm_all$rand_var, na.rm = T)
 
 lasso_all <- rand_sim %>% map_df(~{
   .x$lasso_df
-})
+}) %>%
+  mutate(var = ifelse(var == "maxima", "optimum", var))
+
 
 sum_all <- rand_sim %>% map_df(~{
   .x$summ_stan_df
@@ -229,8 +232,7 @@ sum_all %>%
 
 theme_set(theme_minimal())
 
-
-cairo_pdf(filename = "figures/B14.pdf")
+cairo_pdf(filename = "figures/B11.pdf")
 par(mfrow = c(1, 1))
 plot(NA, NA, type = "n", xlim = c(1,5), ylim =c(100,1),
      ylab = "simulation index", xlab = "treatment value")
@@ -288,38 +290,6 @@ p4 <- lasso_all %>%
   ylab("") +
   theme(legend.position = "none")
 
-cairo_pdf(filename = "figures/B15.pdf", width = 7, height = 5)
+cairo_pdf(filename = "figures/B12.pdf", width = 7, height = 5)
 p1 + p3 + p2 + p4
 dev.off()
-
-
-# cairo_pdf(filename = "figures/B17.pdf")
-# sum_all %>%
-#   #select(-) %>%
-#   group_by(rep) %>%
-#   #rename(α=a, β = b, ζ = c, δ = d, ε = e, β_0 = beta_0,  β_1 = beta_1, optimum = maxima) %>%
-#   summarise_all(.funs = mean) %>%
-#   gather(param, value, -rep) %>%
-#   ggplot(aes(x = value)) +
-#   geom_histogram() +
-#   facet_wrap(~param, scales = "free")
-# dev.off()
-
-
-
-# full_join(
-#   lasso_all,
-#   unif_var_df %>%
-#     mutate(sim_n = 1:n()), 
-#   by = "sim_n"
-# ) %>%
-#   mutate(hi_diff = V5 - V4) %>%
-#   filter(var %in% c("x_min", "x_max")) %>%
-#   #mutate(var = gsub(pattern = "d", replacement = "δ", var)) %>%
-#   #mutate(var = gsub(pattern = "e", replacement = "ε", var)) %>%
-#   rename(parameter = var) %>%
-#   ggplot(aes(hi_diff, prop, colour = parameter)) +
-#   geom_point() +
-#   geom_smooth(method = lm, se = F) +
-#   xlab("Treatment 5 - Treatment 4") +
-#   ylab("proportion of coefficients > 0")

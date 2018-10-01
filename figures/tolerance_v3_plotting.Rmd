@@ -810,7 +810,7 @@ resid_df <- 1:nrow(emery) %>% map_df(~{
 })
 
 
-cairo_pdf("figures/figB11.pdf")
+cairo_pdf("figures/B9.pdf")
 plot(resid_df$predicted, resid_df$res,
      xlab = "fitted values", ylab = "residuals")
 lines(loess.smooth(resid_df$predicted, resid_df$res), lty = 1)
@@ -959,26 +959,28 @@ plot_pars <- function(df = draws, par1, par2, text1, text2){
 plot_pars(par1 = shape2, par2 = x_max, text1 = "", text2 = "")
 
 
+devtools::install_github("ggobi/ggally")
 library(GGally)
 
-# correl <- draws %>%
-#   filter(draw %in% sample(1:ndraws, 500)) %>%
-#   select(shape1, shape2, x_min, maxima, x_max, stretch, nu, species) %>%
-#   as.data.frame() %>%
-# ggscatmat(columns = 1:7, alpha = 0.05, color = "species") +
-#   theme(legend.position = "blank") 
+ # correl <- draws %>%
+ #   filter(draw %in% sample(1:ndraws, 500)) %>%
+ #   select(shape1, shape2, x_min, maxima, x_max, stretch, nu, species) %>%
+ #   as.data.frame() %>%
+ # ggscatmat(columns = 1:7, alpha = 0.05, color = "species") +
+ #   theme(legend.position = "blank") 
 
 correl <- draws %>%
   filter(draw %in% sample(1:ndraws, 500)) %>%
   select(shape1, shape2, x_min, maxima, x_max, stretch, nu, species) %>%
+  rename(optimum = maxima) %>%
   ggpairs(
-    1:7, mapping = aes(color = species), 
-  lower = list(continuous = wrap("points", alpha = 0.05, size = 1, shape = 1)), 
+    1:7, mapping = aes(fill = species, alpha = 0.7), 
+    lower = list(mapping = aes(colour = species), continuous = wrap("points", alpha = 0.05, size = 1, shape = 1)),
   #upper = list(continuous = wrap("points", alpha = 0.05, size = 1, shape = 1)),
   #upper = list(continuous = wrap("cor", size = 1, alignPercent = 1)),
   upper = "blank"
 )
 
-ggsave(filename = "~/Desktop/lasth_corr.png", plot = correl, device = "png", dpi = 320)
+ggsave(filename = "figures/B14.pdf", plot = correl, device = "pdf")
 ```
 
