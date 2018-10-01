@@ -231,15 +231,15 @@ lm(mean_depth ~ mean_inflor, data = mean_df) %>%
   summary()
 
 
-cairo_pdf("~/Desktop/stretch_pool.pdf")
-mean_df %>%
-  ggplot(aes(mean_depth, mean_stretch)) +
-  geom_point(size = 2) +
-  geom_smooth(method = "lm", se = F) +
-  ylab("Mean Stretch") +
-  xlab("Mean pool depth") +
-  theme_classic(base_size = 20)
-dev.off()
+#cairo_pdf("~/Desktop/stretch_pool.pdf")
+#mean_df %>%
+#  ggplot(aes(mean_depth, mean_stretch)) +
+#  geom_point(size = 2) +
+#  geom_smooth(method = "lm", se = F) +
+#  ylab("Mean Stretch") +
+#  xlab("Mean pool depth") +
+#  theme_classic(base_size = 20)
+#dev.off()
 
 
 
