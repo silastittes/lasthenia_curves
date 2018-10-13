@@ -218,13 +218,14 @@ cor.test(emery$Veg_biomass, emery$Inflor_biomass, method = "spearman")
 cor.test(mean_df$mean_depth, mean_df$mean_inflor)
 cor.test(mean_df$mean_stretch, mean_df$mean_inflor)
 
-cairo_pdf("figures/B16.pdf")
+cairo_pdf("figures/B13.pdf")
 mean_df %>%
   ggplot(aes(mean_inflor, mean_depth)) +
   geom_point() +
   geom_smooth(method = "lm") +
   xlab("Mean reproductive biomass") +
-  ylab("Mean pool depth")
+  ylab("Mean pool depth") +
+  theme_minimal()
 dev.off()
 
 lm(mean_depth ~ mean_inflor, data = mean_df) %>%
