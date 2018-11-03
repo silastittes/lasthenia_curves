@@ -668,7 +668,7 @@ spp_list <- rev(lasth$tip.label[lasth$edge[,2][lasth$edge[,2] <= length(lasth$ti
 #png(filename = "figures/fig3_tree_tolerance.png") #alt
 
 
-pdf("figures/fig2.pdf") #alt
+cairo_pdf("figures/fig2.pdf") #alt
 #svg("figures/fig3_tree_tolerance.svg") #alt
 
 c1 <- rep(1, length(spp_list))
@@ -959,7 +959,7 @@ plot_pars <- function(df = draws, par1, par2, text1, text2){
 plot_pars(par1 = shape2, par2 = x_max, text1 = "", text2 = "")
 
 
-devtools::install_github("ggobi/ggally")
+#devtools::install_github("ggobi/ggally")
 library(GGally)
 
  # correl <- draws %>%
