@@ -1,3 +1,6 @@
+[![DOI](https://zenodo.org/badge/140039078.svg)](https://zenodo.org/badge/latestdoi/140039078)
+
+
 Data and code for "Grow where you thrive, or where only you can survive? An analysis of performance curve evolution in a clade with diverse habitat affinities".
 
 Please note, there is now a separate [repository](https://github.com/silastittes/lasthenia_docker) and [Docker container](https://hub.docker.com/r/silastittes/lasthenia_docker/) to facilitate reproducing these analyses. Those interested in reproducing analyses of the paper are highly encourage to follow the README for the container (readme is the same for both pages linked above). 
