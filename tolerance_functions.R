@@ -17,7 +17,7 @@ needed <- pkgs[!(pkgs %in% installed.packages()[,"Package"])]
 
 if(length(needed)) install.packages(needed, dependencies = TRUE)
 
-devtools::install_github("silastittes/performr")
+devtools::install_github("silastittes/performr", version = 0.1)
 
 ################
 ################
